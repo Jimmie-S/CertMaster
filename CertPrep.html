@@ -1,1540 +1,1069 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Certification Quiz Generator</title>
-  
-  <!-- SEO Meta Tags -->
-  <meta name="description" content="Generate practice questions for any certification exam using AI. Study for AWS, Azure, PMP, CISSP, and more.">
-  <meta name="keywords" content="certification, quiz, exam, practice, AWS, Azure, PMP, CISSP, study, AI, questions">
-  <meta name="author" content="CertQuiz">
-  
-  <!-- Open Graph / Social -->
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="Certification Quiz Generator">
-  <meta property="og:description" content="Generate practice questions for any certification exam using AI">
-  
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Certification Quiz Generator">
-  <meta name="twitter:description" content="Generate practice questions for any certification exam using AI">
-  
-  <!-- PWA / Mobile -->
-  <meta name="theme-color" content="#06b6d4">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="CertQuiz">
-  
-  <!-- Embedded Favicon -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='a' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%230f172a'/><stop offset='100%25' style='stop-color:%231e293b'/></linearGradient><linearGradient id='b' x1='0%25' y1='0%25' x2='100%25' y2='0%25'><stop offset='0%25' style='stop-color:%2306b6d4'/><stop offset='100%25' style='stop-color:%233b82f6'/></linearGradient></defs><rect width='32' height='32' rx='6' fill='url(%23a)'/><rect x='7' y='5' width='18' height='22' rx='2' fill='%23334155' stroke='url(%23b)' stroke-width='1'/><rect x='7' y='5' width='18' height='5' rx='2' fill='url(%23b)'/><circle cx='16' cy='7.5' r='2' fill='%230f172a'/><path d='M14.5 7.5L15.5 8.5L18 6' stroke='%2310b981' stroke-width='1' stroke-linecap='round' fill='none'/><rect x='10' y='13' width='12' height='1.5' rx='.75' fill='%2364748b'/><rect x='10' y='16' width='12' height='2' rx='1' fill='%231e293b' stroke='%2306b6d4' stroke-width='.5'/><rect x='10' y='20' width='12' height='2' rx='1' fill='%231e293b' stroke='%23475569' stroke-width='.5'/><rect x='10' y='24' width='12' height='2' rx='1' fill='%231e293b' stroke='%23475569' stroke-width='.5'/></svg>">
-  
-  <!-- Scripts -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CertPrep AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#080b12;color:#dde3f0;font-family:'IBM Plex Sans','Segoe UI',sans-serif;min-height:100vh}
+a{text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+input{font-family:inherit}
+#glow{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(79,142,247,0.12) 0%,transparent 70%);z-index:0}
+#app{position:relative;z-index:1}
+.page{max-width:900px;margin:0 auto;padding:36px 20px 80px}
+.center{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.spinner{width:32px;height:32px;border:3px solid #1e2535;border-top:3px solid #4f8ef7;border-radius:50%;animation:spin 0.8s linear infinite}
+.gen-spinner{width:48px;height:48px;border:3px solid #1e2535;border-top:3px solid #4f8ef7;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 24px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.card{background:#131827;border:1px solid #1e2535;border-radius:14px;padding:20px}
+.btn-primary{padding:10px 20px;background:#4f8ef7;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed}
+.btn-secondary{padding:10px 20px;background:#0f1320;border:1px solid #1e2535;color:#dde3f0;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+.btn-done{padding:10px 20px;background:rgba(61,214,140,0.12);color:#3dd68c;border:1px solid #3dd68c;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+.btn-quiz{padding:10px 20px;background:rgba(245,200,66,0.1);color:#f5c842;border:1px solid #f5c842;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+.btn-back{background:transparent;border:none;color:#6b748a;font-size:14px;cursor:pointer;padding:0 0 20px;display:block;font-family:inherit}
+.input{width:100%;padding:12px 14px;background:#080b12;border:1px solid #1e2535;border-radius:10px;color:#dde3f0;font-size:14px;outline:none}
+.input:focus{border-color:#4f8ef7}
+.label{display:block;font-size:12px;color:#6b748a;margin-bottom:8px;letter-spacing:0.5px}
+.section-title{font-size:12px;color:#6b748a;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px}
+.res-badge{font-size:9px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0;margin-top:2px;text-transform:uppercase;letter-spacing:0.5px}
+.badge-official{background:rgba(79,142,247,0.15);color:#4f8ef7}
+.badge-video{background:rgba(240,106,106,0.15);color:#f06a6a}
+.badge-free{background:rgba(61,214,140,0.15);color:#3dd68c}
+.seg-btn{flex:1;padding:8px 10px;background:#080b12;border:1px solid #1e2535;border-radius:8px;color:#6b748a;font-size:12px;cursor:pointer;font-family:inherit}
+.seg-btn.active{background:rgba(79,142,247,0.12);border-color:#4f8ef7;color:#4f8ef7}
+.opt-btn{display:flex;align-items:center;gap:14px;padding:12px 16px;background:#080b12;border:1px solid #1e2535;border-radius:10px;cursor:pointer;font-size:14px;color:#dde3f0;text-align:left;width:100%;font-family:inherit;transition:border-color .15s}
+.opt-btn:hover:not(:disabled){border-color:#4f8ef7}
+.opt-btn.correct{border-color:#3dd68c;background:rgba(61,214,140,0.1);color:#3dd68c}
+.opt-btn.wrong{border-color:#f06a6a;background:rgba(240,106,106,0.1);color:#f06a6a}
+.opt-btn.faded{opacity:0.4}
+.opt-letter{width:26px;height:26px;border-radius:50%;background:#0f1320;border:1px solid #1e2535;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.progress-bar-wrap{flex:1;height:4px;background:#1e2535;border-radius:4px;overflow:hidden}
+.progress-bar{height:100%;background:#4f8ef7;border-radius:4px;transition:width .3s}
+.msfthub-banner{display:flex;align-items:center;gap:12px;background:rgba(79,142,247,0.06);border:1px solid rgba(79,142,247,0.25);border-radius:10px;padding:11px 16px;margin-bottom:20px;text-decoration:none;color:#dde3f0}
+.msfthub-banner:hover{background:rgba(79,142,247,0.1)}
+.topic-card{background:#131827;border:1px solid #1e2535;border-radius:14px;padding:18px 18px 14px;cursor:pointer;transition:border-color .15s}
+.topic-card:hover{border-color:#4f8ef7}
+.topic-card.done{background:rgba(61,214,140,0.06);border-color:rgba(61,214,140,0.3)}
+.exam-pill{background:#0f1320;border:1px solid #1e2535;border-radius:10px;padding:10px 14px}
+.phase-card{background:#0f1320;border:1px solid #1e2535;border-radius:12px;padding:14px 16px;min-width:170px;flex-shrink:0}
+.tip-row{display:flex;gap:14px;align-items:flex-start;background:#0f1320;border:1px solid #1e2535;border-radius:10px;padding:12px 16px;margin-bottom:8px;font-size:14px}
+.nav-dot{width:10px;height:10px;border-radius:50%;cursor:pointer;transition:background .15s}
+.review-card{margin-bottom:12px}
+.overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.5);display:flex;align-items:flex-start;justify-content:flex-end}
+.settings-panel{background:#0f1320;border:1px solid #1e2535;border-radius:0 0 0 16px;width:340px;max-width:90vw;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,0.6);position:relative;z-index:201}
+.divider{height:1px;background:#1e2535;margin:20px 0}
+.status-banner{border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px}
+.gear-btn{background:#0f1320;border:1px solid #1e2535;border-radius:10px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;flex-shrink:0}
+.key-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#f5c842;border:1px solid #080b12}
+.hidden{display:none!important}
+.flex{display:flex}
+.flex-col{display:flex;flex-direction:column}
+.gap-8{gap:8px}
+.gap-10{gap:10px}
+.gap-12{gap:12px}
+.gap-16{gap:16px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-topics{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.resource-link{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #1e2535;text-decoration:none;color:#dde3f0}
+.resource-link:last-child{border-bottom:none}
+.quiz-card{background:#0f1320;border:1px solid #1e2535;border-radius:20px;padding:28px 28px 24px}
+input[type=range]{accent-color:#4f8ef7}
+input[type=checkbox]{accent-color:#4f8ef7}
+.scrollx{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+</style>
 </head>
 <body>
-  <div id="root"></div>
-  
-  <script type="text/babel">
-    // API Key storage
-    const API_KEY_STORAGE = 'certification_quiz_api_key';
-    
-    const loadApiKey = () => {
-      try {
-        return localStorage.getItem(API_KEY_STORAGE) || '';
-      } catch {
-        return '';
-      }
-    };
-    
-    const saveApiKey = (key) => {
-      try {
-        localStorage.setItem(API_KEY_STORAGE, key);
-      } catch (e) {
-        console.error('Failed to save API key:', e);
-      }
-    };
+<div id="glow"></div>
+<div id="app"><div class="center"><div class="spinner"></div></div></div>
 
-    // Local storage helpers
-    const STORAGE_KEY = 'certification_quiz_bank';
-    
-    const loadQuestionBank = () => {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        return stored ? JSON.parse(stored) : {};
-      } catch {
-        return {};
-      }
-    };
-    
-    const saveQuestionBank = (bank) => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(bank));
-      } catch (e) {
-        console.error('Failed to save to local storage:', e);
-      }
-    };
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+<script>
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+const S = {
+  view: 'loading',      // loading|home|generating|dashboard|topic|quiz|bank
+  sessions: [],
+  certInput: '',
+  activeSession: null,
+  activeTopic: null,
+  genStatus: '',
+  genError: '',
+  // quiz
+  quizView: 'setup',    // setup|active|results|review
+  quizCert: '',
+  quizCount: 10,
+  quizMode: 'training',
+  quizSource: 'new',
+  quizFocusRecent: false,
+  questions: [],
+  userAnswers: {},
+  currentQ: 0,
+  quizLoading: false,
+  quizLoadingMore: false,
+  quizError: '',
+  questionBank: {},
+  // settings/api
+  apiKey: '',
+  showApiModal: false,
+  tempApiKey: '',
+  saveNote: '',
+  bankImportStatus: null,
+  showSettings: false,
+  // abort
+  _abort: null,
+};
 
-    // SQLite export function
-    const exportToSQLite = async (questionBank) => {
-      const SQL = await initSqlJs({
-        locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
-      });
-      
-      const db = new SQL.Database();
-      
-      // Create tables
-      db.run(`
-        CREATE TABLE certifications (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT UNIQUE NOT NULL,
-          created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-      
-      db.run(`
-        CREATE TABLE questions (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          certification_id INTEGER,
-          question TEXT NOT NULL,
-          option_a TEXT,
-          option_b TEXT,
-          option_c TEXT,
-          option_d TEXT,
-          correct_answer TEXT,
-          explanation TEXT,
-          source_url TEXT,
-          source_name TEXT,
-          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (certification_id) REFERENCES certifications(id)
-        )
-      `);
-      
-      // Insert data
-      for (const [certName, questions] of Object.entries(questionBank)) {
-        db.run('INSERT INTO certifications (name) VALUES (?)', [certName]);
-        const certResult = db.exec('SELECT last_insert_rowid() as id');
-        const certId = certResult[0].values[0][0];
-        
-        for (const q of questions) {
-          db.run(`
-            INSERT INTO questions (certification_id, question, option_a, option_b, option_c, option_d, correct_answer, explanation, source_url, source_name)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `, [
-            certId,
-            q.question,
-            q.options?.[0] || '',
-            q.options?.[1] || '',
-            q.options?.[2] || '',
-            q.options?.[3] || '',
-            q.correctAnswer,
-            q.explanation,
-            q.sourceUrl || '',
-            q.sourceName || ''
-          ]);
-        }
-      }
-      
-      // Export database
-      const data = db.export();
-      const blob = new Blob([data], { type: 'application/x-sqlite3' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `quiz-questions-${Date.now()}.db`;
-      a.click();
-      URL.revokeObjectURL(url);
-      db.close();
-    };
-
-    // SQLite import function
-    const importFromSQLite = async (file, currentBank, setQuestionBank) => {
-      const SQL = await initSqlJs({
-        locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
-      });
-      
-      const arrayBuffer = await file.arrayBuffer();
-      const db = new SQL.Database(new Uint8Array(arrayBuffer));
-      
-      // Read certifications and questions
-      const certs = db.exec('SELECT id, name FROM certifications');
-      if (!certs.length) {
-        db.close();
-        return { success: false, message: 'No certifications found in database' };
-      }
-      
-      const newBank = { ...currentBank };
-      let importedCount = 0;
-      let certCount = 0;
-      
-      for (const [certId, certName] of certs[0].values) {
-        const normalizedName = certName.toLowerCase().trim();
-        const existing = newBank[normalizedName] || [];
-        const existingTexts = new Set(existing.map(q => q.question.toLowerCase()));
-        
-        const questionsResult = db.exec(`
-          SELECT question, option_a, option_b, option_c, option_d, correct_answer, explanation, source_url, source_name
-          FROM questions WHERE certification_id = ?
-        `, [certId]);
-        
-        if (questionsResult.length) {
-          const newQuestions = [];
-          for (const row of questionsResult[0].values) {
-            const [question, optA, optB, optC, optD, correctAnswer, explanation, sourceUrl, sourceName] = row;
-            
-            if (!existingTexts.has(question.toLowerCase())) {
-              newQuestions.push({
-                question,
-                options: [optA, optB, optC, optD],
-                correctAnswer,
-                explanation,
-                sourceUrl,
-                sourceName
-              });
-            }
-          }
-          
-          if (newQuestions.length > 0) {
-            newBank[normalizedName] = [...existing, ...newQuestions];
-            importedCount += newQuestions.length;
-            certCount++;
-          }
-        }
-      }
-      
-      db.close();
-      
-      setQuestionBank(newBank);
-      saveQuestionBank(newBank);
-      
-      return { 
-        success: true, 
-        message: `Imported ${importedCount} new questions across ${certCount} certification(s)` 
-      };
-    };
-
-    function App() {
-      const [certification, setCertification] = React.useState('');
-      const [questionCount, setQuestionCount] = React.useState(50);
-      const [focusRecent, setFocusRecent] = React.useState(false);
-      const [quizMode, setQuizMode] = React.useState('training'); // 'training' or 'exam'
-      const [questionSource, setQuestionSource] = React.useState('mixed'); // 'new', 'saved', 'mixed'
-      const [questions, setQuestions] = React.useState([]);
-      const [loading, setLoading] = React.useState(false);
-      const [loadingMore, setLoadingMore] = React.useState(false);
-      const [error, setError] = React.useState('');
-      const [userAnswers, setUserAnswers] = React.useState({});
-      const [showResults, setShowResults] = React.useState(false);
-      const [currentQuestion, setCurrentQuestion] = React.useState(0);
-      const [totalExpected, setTotalExpected] = React.useState(50);
-      const [questionBank, setQuestionBank] = React.useState(loadQuestionBank());
-      const [showBankManager, setShowBankManager] = React.useState(false);
-      const [importStatus, setImportStatus] = React.useState(null);
-      const fileInputRef = React.useRef(null);
-      const abortControllerRef = React.useRef(null);
-      const [isGenerating, setIsGenerating] = React.useState(false);
-      const [saveNotification, setSaveNotification] = React.useState(null);
-      
-      // Settings
-      const [showSettings, setShowSettings] = React.useState(false);
-      const [apiKey, setApiKey] = React.useState(loadApiKey());
-      const [tempApiKey, setTempApiKey] = React.useState('');
-      
-      // Check if API key is set
-      const hasApiKey = apiKey && apiKey.length > 0;
-
-      // Handle file import
-      const handleFileImport = async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        
-        setImportStatus({ loading: true, message: 'Importing...' });
-        
-        try {
-          const result = await importFromSQLite(file, questionBank, setQuestionBank);
-          setImportStatus({ loading: false, success: result.success, message: result.message });
-        } catch (err) {
-          setImportStatus({ loading: false, success: false, message: `Import failed: ${err.message}` });
-        }
-        
-        // Reset file input
-        if (fileInputRef.current) fileInputRef.current.value = '';
-      };
-
-      // Get saved questions for current certification
-      const getSavedQuestions = (certName) => {
-        const normalizedName = certName.toLowerCase().trim();
-        return questionBank[normalizedName] || [];
-      };
-
-      // Save questions to bank - returns count of new questions added
-      const addToQuestionBank = (certName, newQuestions) => {
-        const normalizedName = certName.toLowerCase().trim();
-        
-        // Re-read from localStorage to get latest state (avoid race conditions)
-        const currentBank = loadQuestionBank();
-        const existing = currentBank[normalizedName] || [];
-        
-        // Deduplicate by question text (normalized)
-        const existingTexts = new Set(existing.map(q => q.question.toLowerCase().trim()));
-        const uniqueNew = newQuestions.filter(q => {
-          const normalizedQ = q.question.toLowerCase().trim();
-          if (existingTexts.has(normalizedQ)) {
-            return false;
-          }
-          existingTexts.add(normalizedQ); // Prevent duplicates within the batch too
-          return true;
-        });
-        
-        if (uniqueNew.length === 0) {
-          return 0;
-        }
-        
-        const updated = {
-          ...currentBank,
-          [normalizedName]: [...existing, ...uniqueNew]
-        };
-        
-        // Save immediately to localStorage
-        saveQuestionBank(updated);
-        
-        // Update state
-        setQuestionBank(updated);
-        
-        // Show notification
-        setSaveNotification(`+${uniqueNew.length} saved (${updated[normalizedName].length} total)`);
-        setTimeout(() => setSaveNotification(null), 2000);
-        
-        console.log(`Saved ${uniqueNew.length} new questions for "${certName}". Total: ${updated[normalizedName].length}`);
-        
-        return uniqueNew.length;
-      };
-
-      // Clear questions for a certification
-      const clearCertificationQuestions = (certName) => {
-        const normalizedName = certName.toLowerCase().trim();
-        const updated = { ...questionBank };
-        delete updated[normalizedName];
-        setQuestionBank(updated);
-        saveQuestionBank(updated);
-      };
-
-      // Clear all saved questions
-      const clearAllQuestions = () => {
-        setQuestionBank({});
-        saveQuestionBank({});
-      };
-
-      // Get stats about saved questions
-      const getBankStats = () => {
-        const certs = Object.keys(questionBank);
-        const totalQuestions = Object.values(questionBank).reduce((sum, qs) => sum + qs.length, 0);
-        return { certCount: certs.length, totalQuestions, certifications: certs };
-      };
-
-      const exportResults = (format) => {
-        const score = calculateScore();
-        const percentage = Math.round((score / questions.length) * 100);
-        const date = new Date().toLocaleString();
-        
-        if (format === 'json') {
-          const exportData = {
-            certification,
-            mode: quizMode,
-            date,
-            score,
-            totalQuestions: questions.length,
-            percentage,
-            questions: questions.map((q, idx) => ({
-              number: idx + 1,
-              question: q.question,
-              options: q.options,
-              correctAnswer: q.correctAnswer,
-              yourAnswer: userAnswers[q.id] || 'Not answered',
-              isCorrect: userAnswers[q.id] === q.correctAnswer,
-              explanation: q.explanation,
-              sourceUrl: q.sourceUrl,
-              sourceName: q.sourceName
-            }))
-          };
-          
-          const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `${certification.replace(/\s+/g, '-')}-quiz-results-${Date.now()}.json`;
-          a.click();
-          URL.revokeObjectURL(url);
-        } else if (format === 'csv') {
-          const headers = ['Question #', 'Question', 'Option A', 'Option B', 'Option C', 'Option D', 'Correct Answer', 'Your Answer', 'Result', 'Explanation', 'Source'];
-          const rows = questions.map((q, idx) => [
-            idx + 1,
-            `"${q.question.replace(/"/g, '""')}"`,
-            `"${(q.options[0] || '').replace(/"/g, '""')}"`,
-            `"${(q.options[1] || '').replace(/"/g, '""')}"`,
-            `"${(q.options[2] || '').replace(/"/g, '""')}"`,
-            `"${(q.options[3] || '').replace(/"/g, '""')}"`,
-            q.correctAnswer,
-            userAnswers[q.id] || 'N/A',
-            userAnswers[q.id] === q.correctAnswer ? 'Correct' : userAnswers[q.id] ? 'Wrong' : 'Skipped',
-            `"${q.explanation.replace(/"/g, '""')}"`,
-            q.sourceUrl || ''
-          ]);
-          
-          const csvContent = [
-            `Certification: ${certification}`,
-            `Mode: ${quizMode}`,
-            `Date: ${date}`,
-            `Score: ${score}/${questions.length} (${percentage}%)`,
-            '',
-            headers.join(','),
-            ...rows.map(row => row.join(','))
-          ].join('\n');
-          
-          const blob = new Blob([csvContent], { type: 'text/csv' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `${certification.replace(/\s+/g, '-')}-quiz-results-${Date.now()}.csv`;
-          a.click();
-          URL.revokeObjectURL(url);
-        } else if (format === 'pdf') {
-          // Create printable HTML and open print dialog
-          const printContent = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <title>${certification} Quiz Results</title>
-              <style>
-                body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-                h1 { color: #0891b2; }
-                .header { background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-                .question { border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
-                .correct { border-left: 4px solid #10b981; }
-                .wrong { border-left: 4px solid #ef4444; }
-                .skipped { border-left: 4px solid #f59e0b; }
-                .option { padding: 8px; margin: 5px 0; background: #f8fafc; border-radius: 4px; }
-                .option.correct-answer { background: #d1fae5; }
-                .option.wrong-answer { background: #fee2e2; }
-                .explanation { background: #f1f5f9; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 14px; }
-                .source { color: #0891b2; font-size: 12px; margin-top: 5px; }
-                .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-                .badge.correct { background: #d1fae5; color: #065f46; }
-                .badge.wrong { background: #fee2e2; color: #991b1b; }
-                .badge.skipped { background: #fef3c7; color: #92400e; }
-              </style>
-            </head>
-            <body>
-              <h1>${certification} Quiz Results</h1>
-              <div class="header">
-                <p><strong>Mode:</strong> ${quizMode === 'training' ? 'Training' : 'Exam'}</p>
-                <p><strong>Date:</strong> ${date}</p>
-                <p><strong>Score:</strong> ${score} / ${questions.length} (${percentage}%)</p>
-              </div>
-              ${questions.map((q, idx) => {
-                const isCorrect = userAnswers[q.id] === q.correctAnswer;
-                const isWrong = userAnswers[q.id] && userAnswers[q.id] !== q.correctAnswer;
-                const status = isCorrect ? 'correct' : isWrong ? 'wrong' : 'skipped';
-                return `
-                  <div class="question ${status}">
-                    <p><strong>Q${idx + 1}.</strong> ${q.question} 
-                      <span class="badge ${status}">${isCorrect ? 'Correct' : isWrong ? 'Wrong' : 'Skipped'}</span>
-                    </p>
-                    ${q.options.map((opt, optIdx) => {
-                      const letter = ['A', 'B', 'C', 'D'][optIdx];
-                      const isCorrectOpt = letter === q.correctAnswer;
-                      const isSelectedWrong = userAnswers[q.id] === letter && letter !== q.correctAnswer;
-                      return `<div class="option ${isCorrectOpt ? 'correct-answer' : ''} ${isSelectedWrong ? 'wrong-answer' : ''}">${opt} ${isCorrectOpt ? '✓' : ''} ${isSelectedWrong ? '✗' : ''}</div>`;
-                    }).join('')}
-                    <div class="explanation"><strong>Explanation:</strong> ${q.explanation}</div>
-                    ${q.sourceUrl ? `<p class="source">Source: ${q.sourceName || q.sourceUrl}</p>` : ''}
-                  </div>
-                `;
-              }).join('')}
-            </body>
-            </html>
-          `;
-          
-          const printWindow = window.open('', '_blank');
-          printWindow.document.write(printContent);
-          printWindow.document.close();
-          printWindow.print();
-        }
-      };
-
-      const generateQuestions = async (certName, count, startId, existingQuestions = [], recentOnly = false, signal = null) => {
-        const existingTopics = existingQuestions.length > 0 
-          ? `\n\nAvoid these topics already covered: ${existingQuestions.map(q => q.question.substring(0, 50)).join('; ')}`
-          : '';
-
-        const recentFocus = recentOnly 
-          ? `\n\nIMPORTANT: Focus ONLY on new features, updates, and changes from the last 12 months (2024-2025). Include questions about recent announcements, new services, updated best practices, deprecated features, and any exam content that was added or changed recently.`
-          : '';
-
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true',
-          },
-          signal,
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 4000,
-            messages: [
-              {
-                role: 'user',
-                content: `Generate exactly ${count} multiple choice practice questions for the "${certName}" certification exam. Start numbering from ${startId}.
-
-Return ONLY a valid JSON array with no additional text, markdown, or explanation. Each question object must have this exact structure:
-{
-  "id": number (starting from ${startId}),
-  "question": "the question text",
-  "options": ["A) option1", "B) option2", "C) option3", "D) option4"],
-  "correctAnswer": "A" or "B" or "C" or "D",
-  "explanation": "brief explanation of the correct answer",
-  "sourceUrl": "a real URL to official documentation, guide, or resource where this topic is covered (e.g., official docs, whitepapers, or training materials)",
-  "sourceName": "short name of the source (e.g., 'AWS Documentation', 'Microsoft Learn', 'Google Cloud Docs')"
+function setState(patch, skipRender) {
+  Object.assign(S, patch);
+  if (!skipRender) render();
 }
 
-Make questions realistic, covering key topics that would appear on the actual certification exam. Vary difficulty from basic to advanced. Include scenario-based questions where appropriate.${recentFocus}${existingTopics}`
-              }
-            ]
-          })
-        });
+/* ═══════════════════════════════════════════
+   STORAGE
+═══════════════════════════════════════════ */
+async function storageGet(key) {
+  try { const r = await window.storage.get(key); return r ? JSON.parse(r.value) : null; } catch { return null; }
+}
+async function storageSet(key, val) {
+  try { await window.storage.set(key, JSON.stringify(val)); } catch {}
+}
 
-        const data = await response.json();
-        
-        if (data.error) {
-          throw new Error(data.error.message || 'API request failed');
-        }
+/* ═══════════════════════════════════════════
+   API
+═══════════════════════════════════════════ */
+async function askClaude(messages, system='', apiKey=null) {
+  if (!apiKey) throw new Error('NO_API_KEY');
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,system,messages})
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.content?.[0]?.text || '';
+}
 
-        const content = data.content[0].text;
-        const cleanedContent = content.replace(/```json\n?|```\n?/g, '').trim();
-        return JSON.parse(cleanedContent);
-      };
+async function askClaudeJSON(messages, system='', apiKey=null) {
+  const text = await askClaude(messages, system, apiKey);
+  const clean = text.replace(/^```(?:json)?\s*/m,'').replace(/\s*```\s*$/m,'').trim();
+  return JSON.parse(clean);
+}
 
-      const stopGeneration = () => {
-        if (abortControllerRef.current) {
-          abortControllerRef.current.abort();
-          abortControllerRef.current = null;
-        }
-        setIsGenerating(false);
-        setLoadingMore(false);
-        setLoading(false);
-      };
+/* ═══════════════════════════════════════════
+   MSFTHUB
+═══════════════════════════════════════════ */
+const MSFTHUB_INDEX = {
+  'az-900':'https://msfthub.com/azure/az-900/','az-104':'https://msfthub.com/azure/az-104/',
+  'az-204':'https://msfthub.com/azure/az-204/','az-305':'https://msfthub.com/azure/az-305/',
+  'az-400':'https://msfthub.com/azure/az-400/','az-500':'https://msfthub.com/azure/az-500/',
+  'az-700':'https://msfthub.com/azure/az-700/','az-800':'https://msfthub.com/azure/az-800/',
+  'az-801':'https://msfthub.com/azure/az-801/','az-120':'https://msfthub.com/azure/az-120/',
+  'az-140':'https://msfthub.com/azure/az-140/','dp-100':'https://msfthub.com/azure/dp-100/',
+  'dp-300':'https://msfthub.com/azure/dp-300/','dp-420':'https://msfthub.com/azure/dp-420/',
+  'dp-600':'https://msfthub.com/azure/dp-600/','dp-700':'https://msfthub.com/azure/dp-700/',
+  'dp-900':'https://msfthub.com/azure/dp-900/','sc-100':'https://msfthub.com/security/sc-100/',
+  'sc-200':'https://msfthub.com/security/sc-200/','sc-300':'https://msfthub.com/security/sc-300/',
+  'sc-401':'https://msfthub.com/security/sc-401/','sc-900':'https://msfthub.com/security/sc-900/',
+  'ms-900':'https://msfthub.com/microsoft365/ms-900/','ms-102':'https://msfthub.com/microsoft365/ms-102/',
+  'md-102':'https://msfthub.com/microsoft365/md-102/','ms-700':'https://msfthub.com/microsoft365/ms-700/',
+  'ms-721':'https://msfthub.com/microsoft365/ms-721/','pl-900':'https://msfthub.com/power/pl-900/',
+  'pl-200':'https://msfthub.com/power/pl-200/','pl-300':'https://msfthub.com/power/pl-300/',
+  'pl-400':'https://msfthub.com/power/pl-400/','pl-500':'https://msfthub.com/power/pl-500/',
+  'pl-600':'https://msfthub.com/power/pl-600/','mb-230':'https://msfthub.com/dynamics/mb-230/',
+  'mb-240':'https://msfthub.com/dynamics/mb-240/','mb-280':'https://msfthub.com/dynamics/mb-280/',
+  'mb-310':'https://msfthub.com/dynamics/mb-310/','mb-330':'https://msfthub.com/dynamics/mb-330/',
+  'ai-900':'https://msfthub.com/aiab/ai-900/','ai-102':'https://msfthub.com/aiab/ai-102/',
+  'ab-100':'https://msfthub.com/aiab/ab-100/','ab-730':'https://msfthub.com/aiab/ab-730/',
+  'ab-731':'https://msfthub.com/aiab/ab-731/','ab-900':'https://msfthub.com/aiab/ab-900/',
+  'gh-100':'https://msfthub.com/github/gh-100/','gh-200':'https://msfthub.com/github/gh-200/',
+  'gh-300':'https://msfthub.com/github/gh-300/','gh-500':'https://msfthub.com/github/gh-500/',
+  'gh-900':'https://msfthub.com/github/gh-900/',
+};
+const MSFTHUB_RESOURCES = {
+  'sc-300':[
+    {type:'official',title:'Exam SC-300 Certification Page',url:'https://learn.microsoft.com/credentials/certifications/identity-and-access-administrator/?WT.mc_id=studentamb_165290',description:'Official Microsoft cert page with exam details and registration'},
+    {type:'official',title:'SC-300 Study Guide',url:'https://learn.microsoft.com/credentials/certifications/resources/study-guides/sc-300?WT.mc_id=studentamb_165290',description:'Official study guide covering all exam topics and objectives'},
+    {type:'official',title:'Microsoft Learn Learning Path',url:'https://learn.microsoft.com/training/courses/sc-300t00?WT.mc_id=studentamb_165290',description:'Official Microsoft Learn course and learning path for SC-300'},
+    {type:'official',title:'Microsoft Learn Practice Assessment',url:'https://learn.microsoft.com/certifications/exams/sc-300/practice/assessment?assessment-type=practice&assessmentId=60&WT.mc_id=studentamb_165290',description:'Free official practice test to check your readiness'},
+    {type:'official',title:'Exam Readiness Zone Videos',url:'https://learn.microsoft.com/shows/exam-readiness-zone/preparing-for-sc-300-implement-identities-in-azure-ad-1-of-4?WT.mc_id=studentamb_165290',description:'Video series explaining exactly what the exam tests you on'},
+    {type:'official',title:'SC-300 Exam Labs',url:'https://msfthub.com/labs/security/sc-300',description:'All official lab exercises from Microsoft Learn, ILT, and Applied Skills'},
+    {type:'video',title:"John Savill's SC-300 Full Course",url:'https://www.youtube.com/watch?v=LGpgqRVG65g&list=PLlVtbbG169nGj4rfaMUQiKiBZNDlxoo0y',description:'Comprehensive free YouTube course by Azure expert John Savill'},
+    {type:'video',title:"John Savill's SC-300 Study Cram",url:'https://www.youtube.com/watch?v=LGpgqRVG65g&pp=ygUNc2MgMzAwIGNvdXJzZQ%3D%3D',description:'Condensed cram session — great for last-minute review'},
+    {type:'video',title:'BurningIceTech SC-300 Course',url:'https://www.youtube.com/playlist?list=PLc6LqxQFwub_x6ETpGZ2nCmlq5kJ_F1eH',description:'Full YouTube playlist covering all SC-300 objectives'},
+    {type:'video',title:'I am IT Geek SC-300 Course',url:'https://www.youtube.com/playlist?list=PLJBGLF8tZlXNw3nflOH_oswpaoHWnC93K',description:'Another popular free YouTube course for SC-300'},
+    {type:'free',title:'Microsoft Entra Academy',url:'https://microsoft.github.io/PartnerResources/skilling/microsoft-security-academy/entra-academy',description:'Deep-dive resources on Microsoft Entra — core SC-300 topic'},
+    {type:'free',title:'Defender for Identity Ninja Training',url:'https://techcommunity.microsoft.com/t5/security-compliance-and-identity/microsoft-defender-for-identity-ninja-training/ba-p/2117904?WT.mc_id=studentamb_165290',description:'Microsoft Ninja series covering Defender for Identity in depth'},
+    {type:'free',title:'Microsoft 365 E5 Developer Tenant',url:'https://developer.microsoft.com/microsoft-365/dev-program?WT.mc_id=studentamb_165290',description:'Free sandbox tenant to practice Entra ID and M365 hands-on'},
+    {type:'free',title:'MSFTHub SC-300 Full Resource Page',url:'https://msfthub.com/security/sc-300/',description:'Community-curated hub with all SC-300 resources in one place'},
+  ]
+};
+function getMsfthubUrl(cert) {
+  const code = cert.toLowerCase().replace(/\s+/g,'-').match(/[a-z]{2}-\d{3}/)?.[0];
+  return code ? MSFTHUB_INDEX[code] || null : null;
+}
+function getMsfthubResources(cert) {
+  const code = cert.toLowerCase().replace(/\s+/g,'-').match(/[a-z]{2}-\d{3}/)?.[0];
+  return code ? MSFTHUB_RESOURCES[code] || null : null;
+}
 
-      // Manually save all current questions to bank
-      const saveCurrentQuestions = () => {
-        if (questions.length === 0 || !certification) return;
-        
-        const saved = addToQuestionBank(certification, questions);
-        if (saved === 0) {
-          setSaveNotification('All questions already saved');
-          setTimeout(() => setSaveNotification(null), 2000);
-        }
-      };
+/* ═══════════════════════════════════════════
+   SAVE HELPERS
+═══════════════════════════════════════════ */
+async function saveSessions(list) {
+  setState({sessions:list},true);
+  await storageSet('cert-sessions-v2', list);
+  render();
+}
+async function saveBank(bank) {
+  setState({questionBank:bank},true);
+  await storageSet('cert-quiz-bank', bank);
+  render();
+}
+async function saveKey(key) {
+  setState({apiKey:key},true);
+  await storageSet('cert-api-key', key);
+  render();
+}
 
-      const startQuiz = async () => {
-        if (!certification.trim()) {
-          setError('Please enter a certification name');
-          return;
-        }
-
-        const savedQuestions = getSavedQuestions(certification);
-        
-        // Check if using saved-only mode but no saved questions
-        if (questionSource === 'saved' && savedQuestions.length === 0) {
-          setError(`No saved questions for "${certification}". Generate new questions first or use Mixed/New mode.`);
-          return;
-        }
-
-        if (questionSource !== 'saved' && !hasApiKey) {
-          setError('Please add your Anthropic API key in Settings (click the gear icon)');
-          return;
-        }
-
-        // Cancel any previous generation
-        if (abortControllerRef.current) {
-          abortControllerRef.current.abort();
-        }
-        abortControllerRef.current = new AbortController();
-        const signal = abortControllerRef.current.signal;
-
-        setLoading(true);
-        setIsGenerating(true);
-        setError('');
-        setQuestions([]);
-        setUserAnswers({});
-        setShowResults(false);
-        setCurrentQuestion(0);
-        setTotalExpected(questionCount);
-
-        try {
-          // If using saved questions only
-          if (questionSource === 'saved') {
-            // Shuffle and take requested amount
-            const shuffled = [...savedQuestions].sort(() => Math.random() - 0.5);
-            const selected = shuffled.slice(0, Math.min(questionCount, shuffled.length));
-            // Re-assign IDs
-            const withIds = selected.map((q, idx) => ({ ...q, id: idx + 1 }));
-            setQuestions(withIds);
-            setLoading(false);
-            setIsGenerating(false);
-            return;
-          }
-
-          // Calculate how many to pull from saved vs generate new
-          let fromSaved = [];
-          let needToGenerate = questionCount;
-
-          if (questionSource === 'mixed' && savedQuestions.length > 0) {
-            // Use up to 50% from saved questions
-            const maxFromSaved = Math.min(Math.floor(questionCount * 0.5), savedQuestions.length);
-            const shuffledSaved = [...savedQuestions].sort(() => Math.random() - 0.5);
-            fromSaved = shuffledSaved.slice(0, maxFromSaved);
-            needToGenerate = questionCount - fromSaved.length;
-          }
-
-          // Calculate batch sizes based on questions needed
-          const firstBatchSize = Math.min(5, needToGenerate);
-          const remaining = needToGenerate - firstBatchSize;
-
-          let allNewQuestions = [];
-
-          if (needToGenerate > 0) {
-            const firstBatch = await generateQuestions(certification, firstBatchSize, 1, [], focusRecent, signal);
-            
-            if (!Array.isArray(firstBatch) || firstBatch.length === 0) {
-              throw new Error('Invalid response format');
-            }
-
-            allNewQuestions = [...firstBatch];
-            
-            // Combine saved + first batch for immediate display
-            const combined = [...fromSaved, ...firstBatch].map((q, idx) => ({ ...q, id: idx + 1 }));
-            setQuestions(combined);
-            setLoading(false);
-
-            // Save new questions to bank
-            addToQuestionBank(certification, firstBatch);
-
-            // Generate remaining in background if needed
-            if (remaining > 0) {
-              setLoadingMore(true);
-              
-              const generateRemainingBatches = async () => {
-                const batchSizes = [];
-                let left = remaining;
-                while (left > 0) {
-                  const batchSize = Math.min(5, left);
-                  batchSizes.push(batchSize);
-                  left -= batchSize;
-                }
-                
-                for (let i = 0; i < batchSizes.length; i++) {
-                  // Check if aborted
-                  if (signal.aborted) {
-                    break;
-                  }
-                  
-                  try {
-                    const startId = allNewQuestions.length + 1;
-                    const newBatch = await generateQuestions(
-                      certification, 
-                      batchSizes[i], 
-                      startId,
-                      allNewQuestions,
-                      focusRecent,
-                      signal
-                    );
-                    
-                    if (Array.isArray(newBatch)) {
-                      allNewQuestions = [...allNewQuestions, ...newBatch];
-                      // Save to bank
-                      addToQuestionBank(certification, newBatch);
-                      // Update displayed questions
-                      const combined = [...fromSaved, ...allNewQuestions].map((q, idx) => ({ ...q, id: idx + 1 }));
-                      setQuestions(combined);
-                    }
-                  } catch (err) {
-                    if (err.name === 'AbortError') {
-                      console.log('Generation stopped by user');
-                      break;
-                    }
-                    console.error(`Batch ${i + 2} failed:`, err);
-                  }
-                }
-                
-                setLoadingMore(false);
-                setIsGenerating(false);
-              };
-
-              generateRemainingBatches();
-            } else {
-              setIsGenerating(false);
-            }
-          } else {
-            // Only using saved questions
-            const withIds = fromSaved.map((q, idx) => ({ ...q, id: idx + 1 }));
-            setQuestions(withIds);
-            setLoading(false);
-            setIsGenerating(false);
-          }
-
-        } catch (err) {
-          if (err.name === 'AbortError') {
-            console.log('Generation stopped by user');
-            return;
-          }
-          setError(`Failed to generate questions: ${err.message}. Please try again.`);
-          setLoading(false);
-          setLoadingMore(false);
-          setIsGenerating(false);
-        }
-      };
-
-      const handleAnswerSelect = (questionId, answer) => {
-        if (userAnswers[questionId]) return; // Don't allow changing answer
-        setUserAnswers(prev => ({
-          ...prev,
-          [questionId]: answer
-        }));
-      };
-
-      const calculateScore = () => {
-        let correct = 0;
-        questions.forEach(q => {
-          if (userAnswers[q.id] === q.correctAnswer) {
-            correct++;
-          }
-        });
-        return correct;
-      };
-
-      const goToNext = () => {
-        if (currentQuestion < questions.length - 1) {
-          setCurrentQuestion(curr => curr + 1);
-        }
-      };
-
-      const goToPrev = () => {
-        if (currentQuestion > 0) {
-          setCurrentQuestion(curr => curr - 1);
-        }
-      };
-
-      const answeredCount = Object.keys(userAnswers).length;
-      const currentQ = questions[currentQuestion];
-      const hasAnswered = currentQ && userAnswers[currentQ.id] !== undefined;
-      const isCorrect = hasAnswered && userAnswers[currentQ.id] === currentQ.correctAnswer;
-      const showAnswerFeedback = hasAnswered && quizMode === 'training';
-
-      return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-6">
-          <div className="max-w-3xl mx-auto">
-            <header className="text-center mb-10 relative">
-              <button
-                onClick={() => {
-                  setTempApiKey(apiKey);
-                  setShowSettings(true);
-                }}
-                className="absolute right-0 top-0 p-2 text-slate-400 hover:text-white transition-colors"
-                title="Settings"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </button>
-              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                Certification Quiz Generator
-              </h1>
-              <p className="text-slate-400">Generate practice questions for any certification</p>
-              {!hasApiKey && (
-                <p className="text-amber-400 text-sm mt-2 flex items-center justify-center gap-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  API key not set - click Settings to add it
-                </p>
-              )}
-            </header>
-
-            {/* Settings Modal */}
-            {showSettings && (
-              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md border border-slate-700 shadow-xl">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                      <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      Settings
-                    </h2>
-                    <button
-                      onClick={() => setShowSettings(false)}
-                      className="text-slate-400 hover:text-white"
-                    >
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-2">
-                        Anthropic API Key
-                      </label>
-                      <input
-                        type="password"
-                        value={tempApiKey}
-                        onChange={(e) => setTempApiKey(e.target.value)}
-                        placeholder="sk-ant-..."
-                        className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                      />
-                      <p className="text-xs text-slate-500 mt-2">
-                        Get your API key from{' '}
-                        <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300">
-                          console.anthropic.com
-                        </a>
-                      </p>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 p-3 bg-slate-900/50 rounded-lg border border-slate-700">
-                      <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                      </svg>
-                      <p className="text-xs text-slate-400">
-                        Your API key is stored locally in your browser and never sent anywhere except Anthropic's API.
-                      </p>
-                    </div>
-                    
-                    {hasApiKey && (
-                      <div className="flex items-center gap-2 text-emerald-400 text-sm">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        API key is currently set
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex gap-3 mt-6">
-                    <button
-                      onClick={() => setShowSettings(false)}
-                      className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => {
-                        setApiKey(tempApiKey);
-                        saveApiKey(tempApiKey);
-                        setShowSettings(false);
-                      }}
-                      className="flex-1 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 rounded-lg font-semibold transition-all"
-                    >
-                      Save
-                    </button>
-                  </div>
-                  
-                  {apiKey && (
-                    <button
-                      onClick={() => {
-                        setTempApiKey('');
-                        setApiKey('');
-                        saveApiKey('');
-                      }}
-                      className="w-full mt-3 px-4 py-2 text-red-400 hover:text-red-300 text-sm transition-colors"
-                    >
-                      Remove API Key
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {questions.length === 0 && !loading && (
-              <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-8 shadow-xl border border-slate-700">
-                <div className="flex flex-col gap-4">
-                  <input
-                    type="text"
-                    value={certification}
-                    onChange={(e) => setCertification(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && startQuiz()}
-                    placeholder="Enter certification name (e.g., AWS Solutions Architect, PMP, CISSP)"
-                    className="w-full bg-slate-900/50 border border-slate-600 rounded-xl px-5 py-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
-                  />
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <label className="text-white font-medium">Number of questions</label>
-                      <span className="text-cyan-400 font-bold text-xl">{questionCount}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="1"
-                      max="100"
-                      value={questionCount}
-                      onChange={(e) => setQuestionCount(parseInt(e.target.value))}
-                      className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
-                    />
-                    <div className="flex justify-between text-xs text-slate-500">
-                      <span>1</span>
-                      <span>25</span>
-                      <span>50</span>
-                      <span>75</span>
-                      <span>100</span>
-                    </div>
-                  </div>
-                  
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <div className="relative">
-                      <input
-                        type="checkbox"
-                        checked={focusRecent}
-                        onChange={(e) => setFocusRecent(e.target.checked)}
-                        className="sr-only"
-                      />
-                      <div className={`w-12 h-6 rounded-full transition-colors ${focusRecent ? 'bg-cyan-500' : 'bg-slate-600'}`}>
-                        <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform mt-0.5 ${focusRecent ? 'translate-x-6 ml-0.5' : 'translate-x-0.5'}`}></div>
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-white font-medium">Focus on recent updates</span>
-                      <p className="text-slate-400 text-sm">Questions about new features & changes from the last year</p>
-                    </div>
-                  </label>
-
-                  <div className="space-y-2">
-                    <label className="text-white font-medium">Quiz Mode</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={() => setQuizMode('training')}
-                        className={`p-4 rounded-xl border-2 transition-all text-left ${
-                          quizMode === 'training'
-                            ? 'border-cyan-500 bg-cyan-500/10'
-                            : 'border-slate-600 hover:border-slate-500'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <svg className={`w-5 h-5 ${quizMode === 'training' ? 'text-cyan-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                          </svg>
-                          <span className={`font-semibold ${quizMode === 'training' ? 'text-cyan-400' : 'text-white'}`}>Training</span>
-                        </div>
-                        <p className="text-xs text-slate-400">See answers immediately after each question</p>
-                      </button>
-                      <button
-                        onClick={() => setQuizMode('exam')}
-                        className={`p-4 rounded-xl border-2 transition-all text-left ${
-                          quizMode === 'exam'
-                            ? 'border-amber-500 bg-amber-500/10'
-                            : 'border-slate-600 hover:border-slate-500'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <svg className={`w-5 h-5 ${quizMode === 'exam' ? 'text-amber-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className={`font-semibold ${quizMode === 'exam' ? 'text-amber-400' : 'text-white'}`}>Exam</span>
-                        </div>
-                        <p className="text-xs text-slate-400">See all answers only at the end</p>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <label className="text-white font-medium">Question Source</label>
-                      <button
-                        onClick={() => setShowBankManager(!showBankManager)}
-                        className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-                        </svg>
-                        Manage Bank ({getBankStats().totalQuestions} saved)
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <button
-                        onClick={() => setQuestionSource('new')}
-                        className={`p-3 rounded-xl border-2 transition-all text-center ${
-                          questionSource === 'new'
-                            ? 'border-purple-500 bg-purple-500/10'
-                            : 'border-slate-600 hover:border-slate-500'
-                        }`}
-                      >
-                        <span className={`text-sm font-semibold ${questionSource === 'new' ? 'text-purple-400' : 'text-white'}`}>New Only</span>
-                        <p className="text-xs text-slate-400 mt-1">Generate fresh</p>
-                      </button>
-                      <button
-                        onClick={() => setQuestionSource('mixed')}
-                        className={`p-3 rounded-xl border-2 transition-all text-center ${
-                          questionSource === 'mixed'
-                            ? 'border-emerald-500 bg-emerald-500/10'
-                            : 'border-slate-600 hover:border-slate-500'
-                        }`}
-                      >
-                        <span className={`text-sm font-semibold ${questionSource === 'mixed' ? 'text-emerald-400' : 'text-white'}`}>Mixed</span>
-                        <p className="text-xs text-slate-400 mt-1">Saved + new</p>
-                      </button>
-                      <button
-                        onClick={() => setQuestionSource('saved')}
-                        className={`p-3 rounded-xl border-2 transition-all text-center ${
-                          questionSource === 'saved'
-                            ? 'border-amber-500 bg-amber-500/10'
-                            : 'border-slate-600 hover:border-slate-500'
-                        }`}
-                      >
-                        <span className={`text-sm font-semibold ${questionSource === 'saved' ? 'text-amber-400' : 'text-white'}`}>Saved Only</span>
-                        <p className="text-xs text-slate-400 mt-1">No API calls</p>
-                      </button>
-                    </div>
-                    {certification && getSavedQuestions(certification).length > 0 && (
-                      <p className="text-xs text-emerald-400">
-                        ✓ {getSavedQuestions(certification).length} questions saved for "{certification}"
-                      </p>
-                    )}
-                  </div>
-
-                  {showBankManager && (
-                    <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700">
-                      <div className="flex justify-between items-center mb-3">
-                        <h3 className="font-semibold text-white">Question Bank</h3>
-                        <button
-                          onClick={() => setShowBankManager(false)}
-                          className="text-slate-400 hover:text-white"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                      
-                      {/* Import/Export buttons */}
-                      <div className="flex gap-2 mb-4">
-                        <button
-                          onClick={() => exportToSQLite(questionBank)}
-                          disabled={getBankStats().totalQuestions === 0}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 disabled:bg-slate-700/20 disabled:text-slate-500 border border-emerald-600/50 disabled:border-slate-600/50 rounded-lg text-emerald-300 text-sm transition-colors"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                          </svg>
-                          Export SQLite
-                        </button>
-                        <button
-                          onClick={() => fileInputRef.current?.click()}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-600/50 rounded-lg text-blue-300 text-sm transition-colors"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                          </svg>
-                          Import SQLite
-                        </button>
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          onChange={handleFileImport}
-                          accept=".db,.sqlite,.sqlite3"
-                          className="hidden"
-                        />
-                      </div>
-
-                      {/* Import status message */}
-                      {importStatus && (
-                        <div className={`mb-3 p-2 rounded-lg text-sm ${
-                          importStatus.loading ? 'bg-blue-900/30 text-blue-300' :
-                          importStatus.success ? 'bg-emerald-900/30 text-emerald-300' :
-                          'bg-red-900/30 text-red-300'
-                        }`}>
-                          {importStatus.loading && (
-                            <span className="flex items-center gap-2">
-                              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                              </svg>
-                              {importStatus.message}
-                            </span>
-                          )}
-                          {!importStatus.loading && importStatus.message}
-                        </div>
-                      )}
-                      
-                      {getBankStats().certCount === 0 ? (
-                        <p className="text-slate-400 text-sm">No saved questions yet. Generate a quiz to start building your bank, or import a SQLite database!</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {getBankStats().certifications.map(cert => (
-                            <div key={cert} className="flex justify-between items-center p-2 bg-slate-800/50 rounded-lg">
-                              <div>
-                                <p className="text-white text-sm capitalize">{cert}</p>
-                                <p className="text-xs text-slate-400">{questionBank[cert].length} questions</p>
-                              </div>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => {
-                                    setCertification(cert);
-                                    setQuestionSource('saved');
-                                    setShowBankManager(false);
-                                  }}
-                                  className="text-xs px-2 py-1 bg-cyan-600/20 text-cyan-300 rounded hover:bg-cyan-600/30"
-                                >
-                                  Use
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    if (confirm(`Delete all ${questionBank[cert].length} questions for "${cert}"?`)) {
-                                      clearCertificationQuestions(cert);
-                                    }
-                                  }}
-                                  className="text-xs px-2 py-1 bg-red-600/20 text-red-300 rounded hover:bg-red-600/30"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                          <button
-                            onClick={() => {
-                              if (confirm('Delete ALL saved questions? This cannot be undone.')) {
-                                clearAllQuestions();
-                              }
-                            }}
-                            className="w-full mt-2 text-xs px-3 py-2 bg-red-600/20 text-red-300 rounded-lg hover:bg-red-600/30 border border-red-600/30"
-                          >
-                            Clear All Saved Questions
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  <button
-                    onClick={startQuiz}
-                    disabled={loading}
-                    className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:from-slate-600 disabled:to-slate-700 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-cyan-500/25"
-                  >
-                    Generate Quiz
-                  </button>
-                </div>
-                {error && (
-                  <p className="mt-4 text-red-400 text-center">{error}</p>
-                )}
-              </div>
-            )}
-
-            {loading && (
-              <div className="text-center py-20">
-                <div className="inline-block w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-6"></div>
-                <p className="text-xl text-slate-300">Generating questions for</p>
-                <p className="text-2xl font-semibold text-cyan-400 mt-2">{certification}</p>
-                {focusRecent && <p className="text-amber-400 mt-2">📅 Focusing on recent updates</p>}
-                <p className="text-slate-500 mt-4">Getting your first questions ready...</p>
-                <button
-                  onClick={stopGeneration}
-                  className="mt-6 px-6 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-500 text-red-300 rounded-lg transition-colors"
-                >
-                  Stop Generation
-                </button>
-              </div>
-            )}
-
-            {questions.length > 0 && !loading && !showResults && currentQ && (
-              <div>
-                <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-6 mb-6 border border-slate-700">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h2 className="text-lg font-semibold text-cyan-400">{certification}</h2>
-                      <p className="text-sm text-slate-400">
-                        {answeredCount} of {questions.length} answered
-                        {loadingMore && (
-                          <span className="ml-2 text-cyan-400">
-                            • Loading more questions ({questions.length}/{totalExpected})
-                            <button
-                              onClick={stopGeneration}
-                              className="ml-2 px-2 py-0.5 bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 text-red-300 rounded text-xs transition-colors"
-                            >
-                              Stop
-                            </button>
-                          </span>
-                        )}
-                        {saveNotification && (
-                          <span className="ml-2 text-emerald-400 animate-pulse">
-                            {saveNotification}
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={saveCurrentQuestions}
-                        className="px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-600/50 rounded-lg transition-colors text-sm text-emerald-300 flex items-center gap-1"
-                        title="Save questions to bank"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                        </svg>
-                        Save
-                      </button>
-                      <button
-                        onClick={() => {
-                          setQuestions([]);
-                          setUserAnswers({});
-                          setShowResults(false);
-                          setLoadingMore(false);
-                        }}
-                        className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors text-sm"
-                      >
-                        New Quiz
-                      </button>
-                      <button
-                        onClick={() => setShowResults(true)}
-                        className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 rounded-lg font-semibold transition-all text-sm"
-                      >
-                        See Results
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-1.5">
-                    {questions.map((q, idx) => {
-                      const isAnswered = userAnswers[q.id] !== undefined;
-                      const isCurrent = idx === currentQuestion;
-                      const wasCorrect = isAnswered && userAnswers[q.id] === q.correctAnswer;
-                      const showResult = quizMode === 'training';
-                      
-                      return (
-                        <button
-                          key={q.id}
-                          onClick={() => setCurrentQuestion(idx)}
-                          className={`w-8 h-8 rounded-lg text-xs font-medium transition-all ${
-                            isCurrent
-                              ? 'bg-cyan-500 text-white ring-2 ring-cyan-400 ring-offset-2 ring-offset-slate-800'
-                              : isAnswered
-                              ? showResult
-                                ? wasCorrect 
-                                  ? 'bg-emerald-600/50 text-emerald-200 hover:bg-emerald-600/70'
-                                  : 'bg-red-600/50 text-red-200 hover:bg-red-600/70'
-                                : 'bg-slate-500/50 text-slate-200 hover:bg-slate-500/70'
-                              : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
-                          }`}
-                        >
-                          {idx + 1}
-                        </button>
-                      );
-                    })}
-                    {loadingMore && Array.from({ length: Math.min(5, totalExpected - questions.length) }, (_, i) => (
-                      <div
-                        key={`loading-${i}`}
-                        className="w-8 h-8 rounded-lg bg-slate-700/50 animate-pulse"
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-8 border border-slate-700">
-                  <div className="flex items-center justify-between mb-6">
-                    <span className="text-cyan-400 font-semibold text-lg">
-                      Question {currentQuestion + 1} of {questions.length}
-                    </span>
-                    {hasAnswered && (
-                      showAnswerFeedback ? (
-                        <span className={`text-sm flex items-center gap-1 ${isCorrect ? 'text-emerald-400' : 'text-red-400'}`}>
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            {isCorrect ? (
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            ) : (
-                              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                            )}
-                          </svg>
-                          {isCorrect ? 'Correct!' : 'Incorrect'}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 text-sm flex items-center gap-1">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                          Answered
-                        </span>
-                      )
-                    )}
-                  </div>
-                  
-                  <p className="text-xl font-medium mb-8 leading-relaxed">
-                    {currentQ.question}
-                  </p>
-                  
-                  <div className="space-y-3">
-                    {currentQ.options.map((option, optIdx) => {
-                      const letter = ['A', 'B', 'C', 'D'][optIdx];
-                      const isSelected = userAnswers[currentQ.id] === letter;
-                      const isCorrectOption = letter === currentQ.correctAnswer;
-                      const showCorrect = showAnswerFeedback && isCorrectOption;
-                      const showWrong = showAnswerFeedback && isSelected && !isCorrectOption;
-
-                      return (
-                        <button
-                          key={optIdx}
-                          onClick={() => handleAnswerSelect(currentQ.id, letter)}
-                          disabled={hasAnswered}
-                          className={`w-full text-left p-4 rounded-xl border transition-all ${
-                            showCorrect
-                              ? 'bg-emerald-600/30 border-emerald-500 text-emerald-100'
-                              : showWrong
-                              ? 'bg-red-600/30 border-red-500 text-red-100'
-                              : isSelected
-                              ? 'bg-cyan-600/30 border-cyan-500 text-white'
-                              : hasAnswered
-                              ? 'bg-slate-900/30 border-slate-700 text-slate-500 cursor-default'
-                              : 'bg-slate-900/50 border-slate-600 hover:border-cyan-500/50 hover:bg-slate-800/50 cursor-pointer'
-                          }`}
-                        >
-                          <span className={`font-semibold mr-3 ${
-                            showCorrect ? 'text-emerald-400' :
-                            showWrong ? 'text-red-400' :
-                            isSelected ? 'text-cyan-400' : 'text-slate-400'
-                          }`}>
-                            {letter}.
-                          </span>
-                          {option.replace(/^[A-D]\)\s*/, '')}
-                          {showCorrect && <span className="ml-2">✓</span>}
-                          {showWrong && <span className="ml-2">✗</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Show explanation and source after answering (training mode only) */}
-                  {showAnswerFeedback && (
-                    <div className="mt-6 space-y-3">
-                      <div className={`p-4 rounded-xl ${isCorrect ? 'bg-emerald-900/30 border border-emerald-700/50' : 'bg-amber-900/30 border border-amber-700/50'}`}>
-                        <p className="text-sm">
-                          <span className="font-semibold text-cyan-400">Explanation: </span>
-                          <span className="text-slate-300">{currentQ.explanation}</span>
-                        </p>
-                      </div>
-                      
-                      {currentQ.sourceUrl && (
-                        <a
-                          href={currentQ.sourceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 p-3 bg-slate-900/50 rounded-lg border border-slate-700 hover:border-cyan-500/50 transition-colors group"
-                        >
-                          <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                          </svg>
-                          <div className="flex-1">
-                            <p className="text-sm text-cyan-400 group-hover:text-cyan-300">
-                              {currentQ.sourceName || 'Learn more'}
-                            </p>
-                            <p className="text-xs text-slate-500 truncate">{currentQ.sourceUrl}</p>
-                          </div>
-                        </a>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="flex justify-between mt-8 pt-6 border-t border-slate-700">
-                    <button
-                      onClick={goToPrev}
-                      disabled={currentQuestion === 0}
-                      className="flex items-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-600 rounded-xl transition-colors"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                      Previous
-                    </button>
-                    
-                    {currentQuestion < questions.length - 1 ? (
-                      <button
-                        onClick={goToNext}
-                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 rounded-xl font-semibold transition-all"
-                      >
-                        Next
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => setShowResults(true)}
-                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 rounded-xl font-semibold transition-all"
-                      >
-                        Finish Quiz
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {showResults && (
-              <div>
-                <div className="bg-gradient-to-r from-emerald-900/30 to-cyan-900/30 rounded-2xl p-8 mb-6 border border-emerald-700/50 text-center">
-                  <p className="text-lg text-slate-300 mb-2">Your Score</p>
-                  <p className="text-6xl font-bold text-emerald-400 mb-2">
-                    {calculateScore()} / {questions.length}
-                  </p>
-                  <p className="text-2xl text-slate-300">
-                    {Math.round((calculateScore() / questions.length) * 100)}%
-                  </p>
-                  <div className="mt-6 flex justify-center gap-4">
-                    <button
-                      onClick={() => {
-                        setShowResults(false);
-                        setCurrentQuestion(0);
-                      }}
-                      className="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl transition-colors"
-                    >
-                      Review Answers
-                    </button>
-                    <button
-                      onClick={() => {
-                        setQuestions([]);
-                        setUserAnswers({});
-                        setShowResults(false);
-                      }}
-                      className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 rounded-xl font-semibold transition-all"
-                    >
-                      New Quiz
-                    </button>
-                  </div>
-                  
-                  <div className="mt-6 pt-6 border-t border-slate-700">
-                    <p className="text-sm text-slate-400 text-center mb-3">Export Results</p>
-                    <div className="flex justify-center gap-3">
-                      <button
-                        onClick={() => exportResults('pdf')}
-                        className="flex items-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 rounded-lg text-red-300 text-sm transition-colors"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                        </svg>
-                        PDF
-                      </button>
-                      <button
-                        onClick={() => exportResults('csv')}
-                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-600/50 rounded-lg text-emerald-300 text-sm transition-colors"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        CSV
-                      </button>
-                      <button
-                        onClick={() => exportResults('json')}
-                        className="flex items-center gap-2 px-4 py-2 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-600/50 rounded-lg text-amber-300 text-sm transition-colors"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                        </svg>
-                        JSON
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {questions.map((q, idx) => {
-                    const isCorrect = userAnswers[q.id] === q.correctAnswer;
-                    const isWrong = userAnswers[q.id] && userAnswers[q.id] !== q.correctAnswer;
-
-                    return (
-                      <div
-                        key={q.id}
-                        className={`bg-slate-800/50 backdrop-blur rounded-xl p-6 border transition-all ${
-                          isCorrect ? 'border-emerald-500/50' :
-                          isWrong ? 'border-red-500/50' :
-                          'border-yellow-500/50'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between mb-4">
-                          <p className="font-medium flex-1">
-                            <span className="text-cyan-400 mr-2">Q{idx + 1}.</span>
-                            {q.question}
-                          </p>
-                          <span className={`ml-4 px-3 py-1 rounded-full text-xs font-semibold ${
-                            isCorrect ? 'bg-emerald-600/30 text-emerald-300' :
-                            isWrong ? 'bg-red-600/30 text-red-300' :
-                            'bg-yellow-600/30 text-yellow-300'
-                          }`}>
-                            {isCorrect ? 'Correct' : isWrong ? 'Wrong' : 'Skipped'}
-                          </span>
-                        </div>
-                        
-                        <div className="grid gap-2 mb-4">
-                          {q.options.map((option, optIdx) => {
-                            const letter = ['A', 'B', 'C', 'D'][optIdx];
-                            const isSelected = userAnswers[q.id] === letter;
-                            const isCorrectOption = letter === q.correctAnswer;
-                            const isWrongSelection = isSelected && letter !== q.correctAnswer;
-
-                            return (
-                              <div
-                                key={optIdx}
-                                className={`p-3 rounded-lg border ${
-                                  isCorrectOption ? 'bg-emerald-600/20 border-emerald-500 text-emerald-200' :
-                                  isWrongSelection ? 'bg-red-600/20 border-red-500 text-red-200' :
-                                  'bg-slate-900/30 border-slate-700 text-slate-400'
-                                }`}
-                              >
-                                {option}
-                                {isCorrectOption && <span className="ml-2 text-emerald-400">✓</span>}
-                                {isWrongSelection && <span className="ml-2 text-red-400">✗</span>}
-                              </div>
-                            );
-                          })}
-                        </div>
-                        
-                        <div className="bg-slate-900/50 p-3 rounded-lg mb-3">
-                          <p className="text-sm">
-                            <span className="font-semibold text-cyan-400">Explanation: </span>
-                            <span className="text-slate-300">{q.explanation}</span>
-                          </p>
-                        </div>
-
-                        {q.sourceUrl && (
-                          <a
-                            href={q.sourceUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-sm text-cyan-400 hover:text-cyan-300"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                            {q.sourceName || 'View source'}
-                          </a>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      );
+/* ═══════════════════════════════════════════
+   SQLITE EXPORT / IMPORT
+═══════════════════════════════════════════ */
+async function exportSQLite() {
+  try {
+    const SQL = await window.initSqlJs({locateFile:f=>`https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${f}`});
+    const db = new SQL.Database();
+    db.run('CREATE TABLE certifications (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL)');
+    db.run('CREATE TABLE questions (id INTEGER PRIMARY KEY AUTOINCREMENT, certification_id INTEGER, question TEXT, option_a TEXT, option_b TEXT, option_c TEXT, option_d TEXT, correct_answer TEXT, explanation TEXT, source_url TEXT, source_name TEXT)');
+    for (const [certName, qs] of Object.entries(S.questionBank)) {
+      db.run('INSERT OR IGNORE INTO certifications (name) VALUES (?)',[certName]);
+      const res = db.exec('SELECT id FROM certifications WHERE name=?',[certName]);
+      const certId = res[0].values[0][0];
+      for (const q of qs) {
+        db.run('INSERT INTO questions (certification_id,question,option_a,option_b,option_c,option_d,correct_answer,explanation,source_url,source_name) VALUES (?,?,?,?,?,?,?,?,?,?)',
+          [certId,q.question,q.options?.[0]||'',q.options?.[1]||'',q.options?.[2]||'',q.options?.[3]||'',q.correctAnswer,q.explanation,q.sourceUrl||'',q.sourceName||'']);
+      }
     }
+    db.run('CREATE TABLE study_plans (id INTEGER PRIMARY KEY AUTOINCREMENT, cert TEXT NOT NULL, plan_json TEXT NOT NULL, progress_json TEXT NOT NULL, created_at TEXT)');
+    for (const session of S.sessions) {
+      db.run('INSERT INTO study_plans (cert,plan_json,progress_json,created_at) VALUES (?,?,?,?)',
+        [session.cert,JSON.stringify(session.plan),JSON.stringify(session.progress||{}),session.createdAt||'']);
+    }
+    const data = db.export();
+    const blob = new Blob([data],{type:'application/x-sqlite3'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download=`certprep-backup-${Date.now()}.db`; a.click();
+    URL.revokeObjectURL(url); db.close();
+  } catch(e) {
+    setState({bankImportStatus:{loading:false,success:false,message:`Export failed: ${e.message}`}});
+  }
+}
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
+async function importSQLite(file) {
+  setState({bankImportStatus:{loading:true,message:'Importing…'}});
+  try {
+    const SQL = await window.initSqlJs({locateFile:f=>`https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${f}`});
+    const buf = await file.arrayBuffer();
+    const db = new SQL.Database(new Uint8Array(buf));
+    let qImported=0,qCerts=0,planImported=0;
+    try {
+      const certs = db.exec('SELECT id, name FROM certifications');
+      if (certs.length) {
+        const newBank = {...S.questionBank};
+        for (const [certId,certName] of certs[0].values) {
+          const key = certName.toLowerCase().trim();
+          const existing = newBank[key]||[];
+          const existingTexts = new Set(existing.map(q=>q.question.toLowerCase()));
+          const rows = db.exec('SELECT question,option_a,option_b,option_c,option_d,correct_answer,explanation,source_url,source_name FROM questions WHERE certification_id=?',[certId]);
+          if (rows.length) {
+            const newQs = rows[0].values.filter(r=>!existingTexts.has(r[0].toLowerCase())).map(r=>({question:r[0],options:[r[1],r[2],r[3],r[4]],correctAnswer:r[5],explanation:r[6],sourceUrl:r[7],sourceName:r[8]}));
+            if (newQs.length){newBank[key]=[...existing,...newQs];qImported+=newQs.length;qCerts++;}
+          }
+        }
+        await saveBank(newBank);
+      }
+    } catch(e){}
+    try {
+      const plans = db.exec('SELECT cert, plan_json, progress_json, created_at FROM study_plans');
+      if (plans.length) {
+        const existingIds = new Set(S.sessions.map(s=>s.cert.toLowerCase().trim()));
+        const newPlans=[];
+        for (const [cert,planJson,progressJson,createdAt] of plans[0].values) {
+          if (existingIds.has(cert.toLowerCase().trim())) continue;
+          try { newPlans.push({id:Date.now()+Math.random(),cert,plan:JSON.parse(planJson),progress:JSON.parse(progressJson||'{}'),createdAt}); } catch(e){}
+        }
+        if (newPlans.length){await saveSessions([...newPlans,...S.sessions]);planImported=newPlans.length;}
+      }
+    } catch(e){}
+    db.close();
+    const parts=[];
+    if (qImported>0) parts.push(`${qImported} questions across ${qCerts} cert(s)`);
+    if (planImported>0) parts.push(`${planImported} study plan(s)`);
+    if (!parts.length) parts.push('Nothing new to import (all already present)');
+    setState({bankImportStatus:{loading:false,success:true,message:`Imported: ${parts.join(' · ')}`}});
+  } catch(e) {
+    setState({bankImportStatus:{loading:false,success:false,message:`Import failed: ${e.message}`}});
+  }
+}
+
+/* ═══════════════════════════════════════════
+   QUESTION BANK
+═══════════════════════════════════════════ */
+function addToBank(certName, newQs) {
+  const key = certName.toLowerCase().trim();
+  const existing = S.questionBank[key]||[];
+  const existingTexts = new Set(existing.map(q=>q.question.toLowerCase()));
+  const unique = newQs.filter(q=>!existingTexts.has(q.question.toLowerCase()));
+  if (!unique.length) return 0;
+  const updated = {...S.questionBank,[key]:[...existing,...unique]};
+  saveBank(updated);
+  setState({saveNote:`+${unique.length} saved to question bank (${updated[key].length} total)`});
+  setTimeout(()=>setState({saveNote:''}),2500);
+  return unique.length;
+}
+function getBankQuestions(certName) {
+  return S.questionBank[certName.toLowerCase().trim()]||[];
+}
+
+/* ═══════════════════════════════════════════
+   STUDY PLAN
+═══════════════════════════════════════════ */
+async function handleStartPlan() {
+  const cert = S.certInput.trim();
+  if (!cert) return;
+  if (!S.apiKey) {
+    setState({tempApiKey:'',showApiModal:true});
+    return;
+  }
+  setState({genError:'',genStatus:`Researching ${cert}...`,view:'generating'});
+  const system='You are an expert certification coach. Return ONLY a single valid JSON object with no markdown, no code fences, no explanation.';
+  const prompt=`Create a study plan for the certification: "${cert}"\n\nReturn ONLY this JSON, no markdown:\n{"cert":"${cert}","overview":"2-3 sentence description","examInfo":{"duration":"...","questions":"...","passingScore":"...","cost":"...","validity":"..."},"topics":[{"id":"topic-1","title":"...","weight":"20%","description":"1-2 sentences","subtopics":["...","..."],"resources":[{"type":"official","title":"...","url":"https://...","description":"..."},{"type":"free","title":"...","url":"https://...","description":"..."},{"type":"video","title":"...","url":"https://youtube.com","description":"..."}],"estimatedHours":5}],"studyPlan":{"totalWeeks":8,"weeklyHours":10,"phases":[{"phase":1,"name":"...","weeks":"1-2","focus":"...","topics":["topic-1"]}]},"tips":["...","...","..."]}\nInclude 4-6 realistic topics for "${cert}".`;
+  try {
+    setState({genStatus:'Building your personalized study plan...'});
+    const plan = await askClaudeJSON([{role:'user',content:prompt}],system,S.apiKey);
+    if (!plan?.topics) throw new Error('Unexpected response. Please try again.');
+    const curated = getMsfthubResources(cert);
+    if (curated) {
+      plan.topics = plan.topics.map((topic,i)=>({
+        ...topic,
+        resources: i===0 ? [...curated.slice(0,4),...(topic.resources||[])]
+          : [{type:'official',title:`MSFTHub ${cert.toUpperCase()} Resources`,url:getMsfthubUrl(cert),description:'Community-curated study materials for this exam'},...(topic.resources||[])]
+      }));
+    }
+    const session={id:Date.now(),cert:plan.cert||cert,plan,progress:{},createdAt:new Date().toISOString()};
+    const newSessions=[session,...S.sessions];
+    await saveSessions(newSessions);
+    setState({activeSession:session,certInput:'',view:'dashboard'});
+  } catch(err) {
+    setState({genError:err.message||'Something went wrong. Please try again.'});
+  }
+}
+
+/* ═══════════════════════════════════════════
+   QUIZ
+═══════════════════════════════════════════ */
+async function generateQBatch(certName,count,startId,existing=[],recentOnly=false,signal=null) {
+  const avoid = existing.length ? `\nAvoid these topics: ${existing.map(q=>q.question.substring(0,40)).join('; ')}` : '';
+  const recent = recentOnly ? '\nFocus ONLY on features/updates from the last 12 months (2024-2025).' : '';
+  const res = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',signal,
+    headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content:`Generate exactly ${count} multiple choice practice questions for the "${certName}" certification exam. Start numbering from ${startId}.\n\nReturn ONLY a valid JSON array, no markdown:\n[{"id":${startId},"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correctAnswer":"A","explanation":"...","sourceUrl":"https://...","sourceName":"..."}]\n\nMake questions realistic and exam-relevant. Vary difficulty.${recent}${avoid}`}]})
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  const data=await res.json();
+  if (data.error) throw new Error(data.error.message);
+  const text=data.content[0].text;
+  return JSON.parse(text.replace(/^```(?:json)?\s*/m,'').replace(/\s*```\s*$/m,'').trim());
+}
+
+async function startQuiz() {
+  const cert=(S.quizCert.trim()||S.activeSession?.cert||'');
+  if (!cert){setState({quizError:'Enter a certification name.'});return;}
+  const saved=getBankQuestions(cert);
+  if (S.quizSource!=='saved'&&!S.apiKey){setState({tempApiKey:'',showApiModal:true});return;}
+  if (S.quizSource==='saved'&&!saved.length){setState({quizError:'No saved questions for this cert. Generate new ones first.'});return;}
+  if (S._abort) S._abort.abort();
+  const ctrl=new AbortController();
+  setState({_abort:ctrl,quizLoading:true,quizError:'',questions:[],userAnswers:{},currentQ:0,quizView:'active'});
+  try {
+    if (S.quizSource==='saved'){
+      const shuffled=[...saved].sort(()=>Math.random()-0.5).slice(0,S.quizCount);
+      setState({questions:shuffled.map((q,i)=>({...q,id:i+1})),quizLoading:false});
+      return;
+    }
+    let fromSaved=[],toGenerate=S.quizCount;
+    if (S.quizSource==='mixed'&&saved.length>0){
+      const max=Math.min(Math.floor(S.quizCount*0.5),saved.length);
+      fromSaved=[...saved].sort(()=>Math.random()-0.5).slice(0,max);
+      toGenerate=S.quizCount-fromSaved.length;
+    }
+    const firstSize=Math.min(5,toGenerate);
+    const firstBatch=await generateQBatch(cert,firstSize,1,[],S.quizFocusRecent,ctrl.signal);
+    let allNew=[...firstBatch];
+    addToBank(cert,firstBatch);
+    setState({questions:[...fromSaved,...allNew].map((q,i)=>({...q,id:i+1})),quizLoading:false});
+    const remaining=toGenerate-firstSize;
+    if (remaining>0){
+      setState({quizLoadingMore:true},true);
+      let left=remaining;
+      while (left>0&&!ctrl.signal.aborted){
+        const batchSize=Math.min(5,left);
+        try {
+          const batch=await generateQBatch(cert,batchSize,allNew.length+1,allNew,S.quizFocusRecent,ctrl.signal);
+          if (Array.isArray(batch)){allNew=[...allNew,...batch];addToBank(cert,batch);setState({questions:[...fromSaved,...allNew].map((q,i)=>({...q,id:i+1}))});}
+        } catch(e){if(e.name==='AbortError')break;}
+        left-=batchSize;
+      }
+      setState({quizLoadingMore:false});
+    }
+  } catch(err){
+    if (err.name==='AbortError') return;
+    setState({quizError:`Failed: ${err.message}`,quizLoading:false,quizLoadingMore:false,quizView:'setup'});
+  }
+}
+
+function handleAnswer(qId,answer) {
+  if (S.userAnswers[qId]) return;
+  setState({userAnswers:{...S.userAnswers,[qId]:answer}});
+}
+
+function calcScore(){return S.questions.filter(q=>S.userAnswers[q.id]===q.correctAnswer).length;}
+
+async function toggleTopicDone(topicId) {
+  const prog={...S.activeSession.progress,[topicId]:{...S.activeSession.progress[topicId],done:!S.activeSession.progress[topicId]?.done}};
+  const updated={...S.activeSession,progress:prog};
+  setState({activeSession:updated});
+  await saveSessions(S.sessions.map(s=>s.id===updated.id?updated:s));
+}
+
+/* ═══════════════════════════════════════════
+   RENDER HELPERS
+═══════════════════════════════════════════ */
+function h(tag,attrs,...children){
+  const el=document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs||{})){
+    if (k==='class') el.className=v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(),v);
+    else if (k==='html') el.innerHTML=v;
+    else if (k==='style'&&typeof v==='object') Object.assign(el.style,v);
+    else el.setAttribute(k,v);
+  }
+  for (const c of children.flat(99)){
+    if (c==null||c===false) continue;
+    el.appendChild(typeof c==='string'||typeof c==='number' ? document.createTextNode(c) : c);
+  }
+  return el;
+}
+function txt(s){return document.createTextNode(s);}
+function frag(...children){
+  const f=document.createDocumentFragment();
+  for (const c of children.flat(99)){
+    if (c==null||c===false) continue;
+    f.appendChild(typeof c==='string'||typeof c==='number'?document.createTextNode(c):c);
+  }
+  return f;
+}
+
+function resBadgeClass(type){
+  return 'res-badge '+(type==='official'?'badge-official':type==='video'?'badge-video':'badge-free');
+}
+
+/* ═══════════════════════════════════════════
+   RENDER VIEWS
+═══════════════════════════════════════════ */
+function renderLoading(){
+  return h('div',{class:'center'},h('div',{class:'spinner'}));
+}
+
+function renderApiModal(){
+  const wrap=h('div',{class:'center',style:{minHeight:'100vh',background:'#080b12'}});
+  const card=h('div',{class:'card',style:{maxWidth:'420px',padding:'32px',width:'100%'}});
+  const inp=h('input',{class:'input',type:'password',placeholder:'sk-ant-api03-…',value:S.tempApiKey,
+    style:{marginBottom:'8px'},
+    onInput:e=>setState({tempApiKey:e.target.value},true),
+    onKeydown:e=>{if(e.key==='Enter'&&S.tempApiKey.trim())saveKey(S.tempApiKey).then(()=>setState({showApiModal:false}));}
+  });
+  setTimeout(()=>inp.focus(),50);
+  card.append(
+    h('h2',{style:{fontSize:'20px',fontWeight:'700',marginBottom:'8px'}},'🔑 API Key Required'),
+    h('p',{style:{color:'#6b748a',fontSize:'14px',marginBottom:'20px',lineHeight:'1.6'}},
+      'All AI features need your Anthropic API key. Get one free at ',
+      h('a',{href:'https://console.anthropic.com',target:'_blank',style:{color:'#4f8ef7'}},'console.anthropic.com'),'.'
+    ),
+    inp,
+    h('p',{style:{fontSize:'11px',color:'#6b748a',marginBottom:'20px',lineHeight:'1.5'}},'Stored locally in this browser only.'),
+    h('div',{class:'flex gap-10'},
+      h('button',{class:'btn-secondary',onClick:()=>setState({showApiModal:false})},'Cancel'),
+      h('button',{class:'btn-primary',style:{flex:'1',opacity:S.tempApiKey.trim()?'1':'0.5'},
+        disabled:!S.tempApiKey.trim(),
+        onClick:async()=>{await saveKey(S.tempApiKey);setState({tempApiKey:'',showApiModal:false});}
+      },'Save & Continue →')
+    )
+  );
+  wrap.append(card);
+  return wrap;
+}
+
+function renderGenerating(){
+  const card=h('div',{style:{textAlign:'center',padding:'40px',maxWidth:'380px'}});
+  if (S.genError) {
+    card.append(
+      h('div',{style:{fontSize:'40px',marginBottom:'16px'}},'⚠️'),
+      h('h2',{style:{fontSize:'22px',fontWeight:'700',marginBottom:'10px'}},'Something went wrong'),
+      h('p',{style:{color:'#f06a6a',fontSize:'14px',marginBottom:'20px',lineHeight:'1.6'}},S.genError),
+      h('button',{class:'btn-primary',onClick:()=>setState({genError:'',view:'home'})},'← Try Again')
+    );
+  } else {
+    card.append(
+      h('div',{class:'gen-spinner'}),
+      h('h2',{style:{fontSize:'22px',fontWeight:'700',marginBottom:'10px'}},'Building your study plan'),
+      h('p',{style:{color:'#4f8ef7',fontSize:'15px',marginBottom:'6px'}},S.genStatus),
+      h('p',{style:{color:'#6b748a',fontSize:'13px'}},'This takes about 20–30 seconds…')
+    );
+  }
+  return h('div',{class:'center'},card);
+}
+
+function renderHome(){
+  const totalQ=Object.values(S.questionBank).reduce((s,v)=>s+v.length,0);
+  const certCount=Object.keys(S.questionBank).length;
+
+  // File input for import
+  const fileInput=h('input',{type:'file',accept:'.db',class:'hidden'});
+  fileInput.addEventListener('change',e=>{const f=e.target.files?.[0];if(f)importSQLite(f);});
+
+  // Settings panel
+  const settingsPanel=h('div',{class:'overlay',style:{display:S.showSettings?'flex':'none'}},
+    h('div',{style:{position:'absolute',inset:'0'},onClick:()=>setState({showSettings:false})}),
+    h('div',{class:'settings-panel',onClick:e=>e.stopPropagation()},
+      h('div',{class:'flex',style:{justifyContent:'space-between',alignItems:'center',marginBottom:'24px'}},
+        h('h2',{style:{fontSize:'18px',fontWeight:'700'}},'Settings'),
+        h('button',{style:{background:'transparent',border:'none',color:'#6b748a',fontSize:'20px',cursor:'pointer'},onClick:()=>setState({showSettings:false})},'✕')
+      ),
+      h('label',{class:'label',style:{fontSize:'13px',color:'#dde3f0',marginBottom:'10px'}},'🔑 Anthropic API Key'),
+      (()=>{
+        const ki=h('input',{type:'password',class:'input',placeholder:'sk-ant-api03-…',value:S.tempApiKey,style:{marginBottom:'8px'},
+          onInput:e=>setState({tempApiKey:e.target.value},true)});
+        return ki;
+      })(),
+      h('div',{class:'flex gap-8',style:{marginBottom:'8px'}},
+        h('button',{class:'btn-primary',style:{flex:'1',padding:'9px 0',fontSize:'13px'},onClick:async()=>{await saveKey(S.tempApiKey);setState({showSettings:false});}},'Save Key'),
+        S.apiKey&&h('button',{style:{background:'rgba(240,106,106,0.1)',border:'1px solid rgba(240,106,106,0.3)',color:'#f06a6a',borderRadius:'8px',padding:'9px 14px',fontSize:'13px',cursor:'pointer'},onClick:async()=>{await saveKey('');setState({tempApiKey:''});}},'Remove')
+      ),
+      h('p',{style:{fontSize:'11px',color:'#6b748a',lineHeight:'1.5'}},S.apiKey?'✓ Key is set — stored locally, sent only to Anthropic.':'Required for all AI features. Get yours at console.anthropic.com'),
+      h('div',{class:'divider'}),
+      h('label',{class:'label',style:{fontSize:'13px',color:'#dde3f0',marginBottom:'12px'}},'💾 Backup & Restore'),
+      h('div',{style:{fontSize:'13px',color:'#6b748a',marginBottom:'14px',lineHeight:'1.6'}},
+        h('span',{style:{color:'#dde3f0'}},S.sessions.length),' study plan(s) · ',
+        h('span',{style:{color:'#dde3f0'}},totalQ),' questions across ',
+        h('span',{style:{color:'#dde3f0'}},certCount),' cert(s)',
+        h('br'),h('span',{style:{fontSize:'11px'}},'Export saves everything. Import merges without overwriting.')
+      ),
+      S.bankImportStatus&&h('div',{class:'status-banner',style:{background:S.bankImportStatus.loading?'rgba(79,142,247,0.08)':S.bankImportStatus.success?'rgba(61,214,140,0.08)':'rgba(240,106,106,0.08)',border:`1px solid ${S.bankImportStatus.loading?'#4f8ef7':S.bankImportStatus.success?'#3dd68c':'#f06a6a'}`,color:S.bankImportStatus.loading?'#4f8ef7':S.bankImportStatus.success?'#3dd68c':'#f06a6a'}},S.bankImportStatus.message),
+      h('div',{class:'flex-col gap-8'},
+        h('button',{class:'btn-secondary',style:{display:'flex',alignItems:'center',gap:'8px',justifyContent:'center',fontSize:'13px'},onClick:()=>fileInput.click()},'⬆ Import Backup (.db)'),
+        h('button',{class:'btn-secondary',style:{display:'flex',alignItems:'center',gap:'8px',justifyContent:'center',fontSize:'13px',opacity:totalQ>0?'1':'0.4'},disabled:totalQ===0,onClick:exportSQLite},'⬇ Export Full Backup (.db)'),
+        h('button',{class:'btn-secondary',style:{display:'flex',alignItems:'center',gap:'8px',justifyContent:'center',fontSize:'13px'},onClick:()=>setState({showSettings:false,view:'bank'})},'⚙ Manage Bank')
+      )
+    )
+  );
+
+  const certInp=h('input',{style:{flex:'1',background:'transparent',border:'none',color:'#dde3f0',fontSize:'15px',padding:'10px 12px',outline:'none'},
+    placeholder:'e.g. SC-300, AWS Solutions Architect, CompTIA Security+…',
+    value:S.certInput,
+    onInput:e=>setState({certInput:e.target.value},true),
+    onKeydown:e=>{if(e.key==='Enter')handleStartPlan();}
+  });
+
+  const chips=['SC-300','AWS Solutions Architect','CompTIA Security+','Google Cloud ACE','PMP','CISSP','CCNA','AZ-900'];
+
+  const sessionsEl=S.sessions.length>0&&h('div',{},
+    h('h2',{class:'section-title'},'Your Certifications'),
+    h('div',{class:'flex-col gap-10'},
+      ...S.sessions.map(session=>{
+        const total=session.plan?.topics?.length||0;
+        const done=Object.values(session.progress||{}).filter(p=>p.done).length;
+        const pct=total?Math.round((done/total)*100):0;
+        return h('div',{style:{background:'#0f1320',border:'1px solid #1e2535',borderRadius:'12px',padding:'16px 18px',display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'},
+            onClick:()=>setState({activeSession:session,view:'dashboard'})},
+          h('div',{style:{flex:'1'}},
+            h('div',{style:{fontWeight:'600',fontSize:'16px',marginBottom:'4px'}},session.cert),
+            h('div',{style:{fontSize:'12px',color:'#6b748a',marginBottom:'8px'}},`${done}/${total} topics complete`),
+            h('div',{class:'flex',style:{alignItems:'center',gap:'8px'}},
+              h('div',{class:'progress-bar-wrap'},h('div',{class:'progress-bar',style:{width:pct+'%'}})),
+              h('span',{style:{fontSize:'12px',color:'#4f8ef7',fontWeight:'600',minWidth:'32px'}},pct+'%')
+            )
+          ),
+          h('div',{class:'flex gap-8',style:{marginLeft:'16px'}},
+            h('button',{class:'btn-secondary',style:{padding:'8px 14px',fontSize:'13px'},onClick:e=>{e.stopPropagation();setState({quizCert:session.cert,quizView:'setup',view:'quiz'});}},'\u26a1 Quiz'),
+            h('button',{style:{background:'transparent',border:'none',color:'#6b748a',cursor:'pointer',fontSize:'16px',padding:'4px 6px'},
+              onClick:e=>{e.stopPropagation();saveSessions(S.sessions.filter(s=>s.id!==session.id));}
+            },'✕')
+          )
+        );
+      })
+    )
+  );
+
+  const emptyEl=S.sessions.length===0&&h('div',{style:{textAlign:'center',paddingTop:'32px'}},
+    h('div',{style:{fontSize:'48px',marginBottom:'12px'}},'🎓'),
+    h('p',{style:{color:'#6b748a',fontSize:'15px',marginBottom:'20px'}},'Type a certification above to get started.'),
+    h('div',{style:{display:'flex',flexWrap:'wrap',gap:'8px',justifyContent:'center'}},
+      ...chips.map(cert=>h('button',{style:{padding:'7px 14px',background:'#0f1320',border:'1px solid #1e2535',borderRadius:'20px',color:'#dde3f0',fontSize:'13px',cursor:'pointer'},
+        onClick:()=>{setState({certInput:cert},true);certInp.value=cert;}},cert))
+    )
+  );
+
+  return frag(
+    fileInput,
+    settingsPanel,
+    h('div',{class:'page'},
+      // Top bar
+      h('div',{class:'flex',style:{justifyContent:'space-between',alignItems:'center',marginBottom:'32px'}},
+        h('div',{class:'flex',style:{alignItems:'center',gap:'10px'}},
+          h('span',{style:{fontSize:'24px',color:'#4f8ef7'}},'◈'),
+          h('span',{style:{fontSize:'22px',fontWeight:'700',letterSpacing:'-0.5px'}},'CertPrep AI')
+        ),
+        h('button',{class:'gear-btn',title:'Settings',onClick:()=>setState({tempApiKey:S.apiKey,showSettings:true})},
+          h('svg',{width:'18',height:'18',viewBox:'0 0 24 24',fill:'none',stroke:S.apiKey?'#4f8ef7':'#6b748a','stroke-width':'2','stroke-linecap':'round','stroke-linejoin':'round',html:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'}),
+          !S.apiKey&&h('span',{class:'key-dot'})
+        )
+      ),
+      h('div',{style:{textAlign:'center',marginBottom:'32px'}},
+        h('p',{style:{color:'#6b748a',fontSize:'15px',maxWidth:'480px',margin:'0 auto'}},'Enter any certification — get an AI study plan, resources, and practice quizzes.')
+      ),
+      h('div',{style:{display:'flex',gap:'10px',marginBottom:'12px',background:'#0f1320',border:'1px solid #1e2535',borderRadius:'14px',padding:'8px'}},
+        certInp,
+        h('button',{class:'btn-primary',style:{width:'auto',padding:'11px 22px',whiteSpace:'nowrap',opacity:S.certInput.trim()?'1':'0.5'},
+          disabled:!S.certInput.trim(),onClick:handleStartPlan},'Build Study Plan →')
+      ),
+      h('div',{style:{textAlign:'center',marginBottom:'36px'}},
+        h('span',{style:{color:'#6b748a',fontSize:'13px'}},'or '),
+        h('button',{style:{background:'transparent',border:'none',color:'#4f8ef7',fontSize:'13px',cursor:'pointer',textDecoration:'underline'},
+          onClick:()=>setState({quizView:'setup',view:'quiz'})},'go straight to quiz generator →')
+      ),
+      sessionsEl||'',
+      emptyEl||''
+    )
+  );
+}
+
+function renderDashboard(){
+  const {plan,progress,cert}=S.activeSession;
+  const totalTopics=plan.topics?.length||0;
+  const doneTopics=Object.values(progress||{}).filter(p=>p.done).length;
+  const pct=totalTopics?Math.round((doneTopics/totalTopics)*100):0;
+  const circumference=213.6;
+  const dashLen=circumference*pct/100;
+  const hubUrl=getMsfthubUrl(cert);
+
+  return h('div',{class:'page'},
+    h('div',{class:'flex',style:{justifyContent:'space-between',alignItems:'center',marginBottom:'4px'}},
+      h('button',{class:'btn-back',style:{padding:'0 0 20px'},onClick:()=>setState({view:'home'})},'← All certifications'),
+      h('button',{class:'btn-quiz',onClick:()=>setState({quizCert:S.activeSession.cert,quizView:'setup',view:'quiz'})},'⚡ Practice Quiz')
+    ),
+    h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'24px',gap:'20px'}},
+      h('div',{style:{flex:'1'}},
+        h('h1',{style:{fontSize:'26px',fontWeight:'700',marginBottom:'8px'}},cert),
+        h('p',{style:{color:'#6b748a',fontSize:'14px',lineHeight:'1.6',maxWidth:'500px'}},plan.overview)
+      ),
+      h('div',{style:{position:'relative',flexShrink:'0'}},
+        h('svg',{viewBox:'0 0 80 80',width:'80',height:'80',html:`<circle cx="40" cy="40" r="34" fill="none" stroke="#1e2535" stroke-width="8"/><circle cx="40" cy="40" r="34" fill="none" stroke="#4f8ef7" stroke-width="8" stroke-dasharray="${dashLen} ${circumference}" stroke-linecap="round" transform="rotate(-90 40 40)"/>`}),
+        h('div',{style:{position:'absolute',inset:'0',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}},
+          h('span',{style:{fontSize:'18px',fontWeight:'700'}},pct+'%'),
+          h('span',{style:{fontSize:'10px',color:'#6b748a'}},`${doneTopics}/${totalTopics}`)
+        )
+      )
+    ),
+    hubUrl&&h('a',{href:hubUrl,target:'_blank',class:'msfthub-banner'},
+      h('span',{style:{fontSize:'18px'}},'🔗'),
+      h('div',{},
+        h('div',{style:{fontSize:'13px',fontWeight:'600'}},'MSFTHub — '+cert.toUpperCase()+' Community Study Hub'),
+        h('div',{style:{fontSize:'11px',color:'#6b748a'}},'Curated resources, free practice tests, labs & video courses')
+      ),
+      h('span',{style:{marginLeft:'auto',color:'#4f8ef7',fontSize:'14px',flexShrink:'0'}},'↗')
+    ),
+    plan.examInfo&&h('div',{style:{display:'flex',flexWrap:'wrap',gap:'10px',marginBottom:'32px'}},
+      ...Object.entries(plan.examInfo).map(([k,v])=>
+        h('div',{class:'exam-pill'},
+          h('div',{style:{fontSize:'10px',color:'#6b748a',textTransform:'uppercase',letterSpacing:'1px',marginBottom:'4px'}},k.replace(/([A-Z])/g,' $1').trim()),
+          h('div',{style:{fontSize:'14px',fontWeight:'600'}},v)
+        )
+      )
+    ),
+    plan.studyPlan?.phases?.length>0&&h('div',{style:{marginBottom:'32px'}},
+      h('h2',{class:'section-title'},`Study Plan — ${plan.studyPlan.totalWeeks} weeks · ${plan.studyPlan.weeklyHours}h/week`),
+      h('div',{class:'scrollx'},
+        ...plan.studyPlan.phases.map(ph=>h('div',{class:'phase-card'},
+          h('div',{style:{fontSize:'11px',color:'#4f8ef7',fontWeight:'700',letterSpacing:'1px',textTransform:'uppercase',marginBottom:'4px'}},'Phase '+ph.phase),
+          h('div',{style:{fontWeight:'600',fontSize:'14px',marginBottom:'4px'}},ph.name),
+          h('div',{style:{fontSize:'11px',color:'#6b748a',marginBottom:'6px'}},'Weeks '+ph.weeks),
+          h('div',{style:{fontSize:'12px',color:'#6b748a',lineHeight:'1.5'}},ph.focus)
+        ))
+      )
+    ),
+    h('div',{style:{marginBottom:'32px'}},
+      h('h2',{class:'section-title'},'Topics'),
+      h('div',{class:'grid-topics'},
+        ...(plan.topics||[]).map(topic=>{
+          const tp=progress[topic.id]||{};
+          return h('div',{class:'topic-card'+(tp.done?' done':''),onClick:()=>setState({activeTopic:topic,view:'topic'})},
+            h('div',{style:{display:'flex',alignItems:'center',gap:'8px',marginBottom:'10px'}},
+              h('span',{style:{fontSize:'11px',fontWeight:'700',color:'#4f8ef7',background:'rgba(79,142,247,0.12)',padding:'2px 8px',borderRadius:'10px'}},topic.weight),
+              tp.done&&h('span',{style:{fontSize:'11px',color:'#3dd68c',background:'rgba(61,214,140,0.12)',padding:'2px 8px',borderRadius:'10px'}},'✓ Done')
+            ),
+            h('h3',{style:{fontSize:'15px',fontWeight:'600',marginBottom:'6px'}},topic.title),
+            h('p',{style:{fontSize:'12px',color:'#6b748a',marginBottom:'12px',lineHeight:'1.5'}},topic.description),
+            h('div',{style:{display:'flex',justifyContent:'space-between'}},
+              h('span',{style:{fontSize:'11px',color:'#6b748a'}},'~'+topic.estimatedHours+'h'),
+              h('span',{style:{fontSize:'12px',color:'#4f8ef7',fontWeight:'600'}},'Study →')
+            )
+          );
+        })
+      )
+    ),
+    plan.tips?.length>0&&h('div',{},
+      h('h2',{class:'section-title'},'💡 Exam Tips'),
+      ...plan.tips.map((tip,i)=>h('div',{class:'tip-row'},
+        h('span',{style:{width:'22px',height:'22px',borderRadius:'50%',background:'rgba(79,142,247,0.12)',color:'#4f8ef7',fontSize:'11px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:'0'}},i+1),
+        tip
+      ))
+    )
+  );
+}
+
+function renderTopic(){
+  const topic=S.activeTopic;
+  const prog=S.activeSession?.progress?.[topic.id]||{};
+  const hubUrl=getMsfthubUrl(S.activeSession?.cert||'');
+  return h('div',{class:'page'},
+    h('button',{class:'btn-back',onClick:()=>setState({view:'dashboard'})},'← Back to plan'),
+    h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'24px',gap:'20px',flexWrap:'wrap'}},
+      h('div',{},
+        h('div',{style:{fontSize:'12px',color:'#4f8ef7',fontWeight:'700',marginBottom:'6px',letterSpacing:'1px'}},topic.weight+' of exam'),
+        h('h1',{style:{fontSize:'24px',fontWeight:'700',marginBottom:'8px'}},topic.title),
+        h('p',{style:{color:'#6b748a',fontSize:'14px',maxWidth:'480px'}},topic.description)
+      ),
+      h('div',{class:'flex gap-10',style:{flexWrap:'wrap',flexShrink:'0'}},
+        h('button',{class:prog.done?'btn-done':'btn-primary',onClick:()=>toggleTopicDone(topic.id)},prog.done?'✓ Completed':'Mark Complete'),
+        h('button',{class:'btn-quiz',onClick:()=>setState({quizCert:S.activeSession?.cert||'',view:'quiz'})},'⚡ Practice Quiz')
+      )
+    ),
+    hubUrl&&h('a',{href:hubUrl,target:'_blank',class:'msfthub-banner'},
+      h('span',{style:{fontSize:'20px'}},'🔗'),
+      h('div',{},
+        h('div',{style:{fontSize:'13px',fontWeight:'600'}},'MSFTHub — '+(S.activeSession?.cert||'').toUpperCase()+' Study Materials'),
+        h('div',{style:{fontSize:'11px',color:'#6b748a'}},'Community-curated resources, labs, videos & practice tests → msfthub.com')
+      ),
+      h('span',{style:{marginLeft:'auto',color:'#4f8ef7',fontSize:'14px'}},'↗')
+    ),
+    h('div',{class:'grid-2'},
+      h('div',{class:'card'},
+        h('h3',{style:{fontSize:'12px',color:'#6b748a',textTransform:'uppercase',letterSpacing:'1.5px',marginBottom:'14px',fontWeight:'600'}},'📋 Subtopics'),
+        h('ul',{style:{listStyle:'none',display:'flex',flexDirection:'column',gap:'8px'}},
+          ...(topic.subtopics||[]).map(sub=>h('li',{style:{display:'flex',alignItems:'center',gap:'10px',fontSize:'14px'}},
+            h('span',{style:{width:'6px',height:'6px',borderRadius:'50%',background:'#4f8ef7',flexShrink:'0',display:'inline-block'}}),
+            sub
+          ))
+        )
+      ),
+      h('div',{class:'card'},
+        h('h3',{style:{fontSize:'12px',color:'#6b748a',textTransform:'uppercase',letterSpacing:'1.5px',marginBottom:'14px',fontWeight:'600'}},'🔗 Study Resources'),
+        ...(topic.resources||[]).map(r=>h('a',{href:r.url,target:'_blank',class:'resource-link'},
+          h('span',{class:resBadgeClass(r.type)},r.type),
+          h('div',{style:{flex:'1'}},
+            h('div',{style:{fontSize:'13px',fontWeight:'600',marginBottom:'2px'}},r.title),
+            h('div',{style:{fontSize:'12px',color:'#6b748a'}},r.description)
+          ),
+          h('span',{style:{color:'#6b748a',fontSize:'14px'}},'↗')
+        ))
+      )
+    )
+  );
+}
+
+function renderQuizSetup(){
+  const saved=getBankQuestions(S.quizCert||S.activeSession?.cert||'');
+  const totalQ=Object.values(S.questionBank).reduce((s,v)=>s+v.length,0);
+  const certInp=h('input',{class:'input',placeholder:'e.g. SC-300, AWS SAA, CompTIA Security+…',value:S.quizCert,
+    onInput:e=>setState({quizCert:e.target.value},true),onKeydown:e=>{if(e.key==='Enter')startQuiz();}});
+  const countInp=h('input',{type:'range',min:'5',max:'50',value:S.quizCount,style:{width:'100%'},
+    onInput:e=>setState({quizCount:parseInt(e.target.value)})});
+
+  return h('div',{class:'page'},
+    h('button',{class:'btn-back',onClick:()=>setState({view:S.activeSession?'dashboard':'home'})},'← Back'),
+    h('h1',{style:{fontSize:'26px',fontWeight:'700',marginBottom:'6px'}},'Practice Quiz'),
+    h('p',{style:{color:'#6b748a',fontSize:'14px',marginBottom:'28px'}},'Generate AI-powered exam questions for any certification.'),
+    h('div',{class:'card'},
+      !S.apiKey&&h('div',{style:{background:'rgba(245,200,66,0.08)',border:'1px solid rgba(245,200,66,0.3)',borderRadius:'10px',padding:'12px 16px',marginBottom:'20px',fontSize:'13px',color:'#f5c842',display:'flex',justifyContent:'space-between',alignItems:'center'}},
+        h('span',{},'⚠️ API key required for AI features'),
+        h('button',{style:{background:'rgba(245,200,66,0.15)',border:'1px solid rgba(245,200,66,0.4)',color:'#f5c842',borderRadius:'7px',padding:'5px 12px',fontSize:'12px',cursor:'pointer'},
+          onClick:()=>setState({tempApiKey:'',showApiModal:true})},'Add Key')
+      ),
+      h('div',{style:{marginBottom:'18px'}},
+        h('label',{class:'label'},'Certification'),
+        certInp
+      ),
+      h('div',{style:{marginBottom:'18px'}},
+        h('div',{class:'flex',style:{justifyContent:'space-between',marginBottom:'8px'}},
+          h('label',{class:'label',style:{margin:'0'}},'Questions'),
+          h('span',{style:{color:'#4f8ef7',fontWeight:'700',fontSize:'18px'}},S.quizCount)
+        ),
+        countInp,
+        h('div',{class:'flex',style:{justifyContent:'space-between',fontSize:'11px',color:'#6b748a',marginTop:'4px'}},
+          ...[5,10,20,30,50].map(n=>h('span',{},n))
+        )
+      ),
+      h('div',{class:'grid-2',style:{marginBottom:'18px'}},
+        h('div',{},
+          h('label',{class:'label'},'Mode'),
+          h('div',{class:'flex gap-8'},
+            ...['training','exam'].map(m=>h('button',{class:'seg-btn'+(S.quizMode===m?' active':''),onClick:()=>setState({quizMode:m})},m==='training'?'📖 Training':'📝 Exam'))
+          )
+        ),
+        h('div',{},
+          h('label',{class:'label'},'Source'),
+          h('div',{class:'flex gap-8'},
+            ...['new','mixed','saved'].map(src=>h('button',{class:'seg-btn'+(S.quizSource===src?' active':''),onClick:()=>setState({quizSource:src})},src))
+          )
+        )
+      ),
+      h('label',{style:{display:'flex',alignItems:'center',gap:'10px',cursor:'pointer',marginBottom:'20px',fontSize:'14px'}},
+        h('input',{type:'checkbox',checked:S.quizFocusRecent?'checked':null,onChange:e=>setState({quizFocusRecent:e.target.checked})}),
+        h('span',{style:{color:'#6b748a'}},'Focus on recent updates (2024–2025)')
+      ),
+      h('div',{style:{background:'rgba(79,142,247,0.06)',border:'1px solid #1e2535',borderRadius:'10px',padding:'12px 16px',marginBottom:'18px',fontSize:'13px',display:'flex',justifyContent:'space-between',alignItems:'center'}},
+        h('div',{},
+          h('span',{style:{color:'#6b748a'}},'📦 Question bank: '),
+          Object.keys(S.questionBank).length===0
+            ? h('span',{style:{color:'#6b748a'}},'empty')
+            : frag(...Object.entries(S.questionBank).map(([k,v])=>h('span',{style:{marginRight:'12px'}},h('span',{style:{color:'#dde3f0'}},k),h('span',{style:{color:'#6b748a'}},` (${v.length})`))))
+        ),
+        h('button',{style:{background:'rgba(79,142,247,0.15)',border:'1px solid #4f8ef7',color:'#4f8ef7',borderRadius:'7px',padding:'5px 12px',fontSize:'12px',cursor:'pointer',fontWeight:'600',flexShrink:'0'},onClick:()=>setState({view:'bank'})},'Manage →')
+      ),
+      S.quizError&&h('p',{style:{color:'#f06a6a',fontSize:'13px',marginBottom:'12px'}},S.quizError),
+      h('button',{class:'btn-primary',style:{width:'100%'},onClick:startQuiz},'Generate Quiz →')
+    )
+  );
+}
+
+function renderQuizActive(){
+  if (S.quizLoading&&S.questions.length===0) return h('div',{class:'center'},
+    h('div',{style:{textAlign:'center',padding:'40px'}},
+      h('div',{class:'gen-spinner'}),
+      h('h2',{style:{fontSize:'22px',fontWeight:'700',marginBottom:'10px'}},'Generating questions…'),
+      h('p',{style:{color:'#6b748a',fontSize:'13px'}},'First batch in ~10 seconds')
+    )
+  );
+  const cq=S.questions[S.currentQ];
+  if (!cq) return null;
+  const hasAnswered=S.userAnswers[cq.id]!==undefined;
+  const showFeedback=hasAnswered&&S.quizMode==='training';
+  const isCorrect=hasAnswered&&S.userAnswers[cq.id]===cq.correctAnswer;
+  const allAnswered=Object.keys(S.userAnswers).length>=S.questions.length;
+
+  return h('div',{class:'page'},
+    h('div',{class:'flex',style:{justifyContent:'space-between',alignItems:'center',marginBottom:'16px'}},
+      h('button',{class:'btn-back',style:{padding:'0'},onClick:()=>{S._abort?.abort();setState({quizView:'setup'});}},'\u2190 Exit'),
+      h('div',{class:'flex gap-12',style:{alignItems:'center'}},
+        S.quizLoadingMore&&h('span',{style:{fontSize:'12px',color:'#4f8ef7'}},'⟳ Loading more…'),
+        S.saveNote&&h('span',{style:{fontSize:'12px',color:'#3dd68c'}},S.saveNote),
+        allAnswered&&h('button',{class:'btn-primary',onClick:()=>setState({quizView:'results'})},'See Results →')
+      )
+    ),
+    h('div',{class:'quiz-card'},
+      h('div',{class:'flex',style:{justifyContent:'space-between',marginBottom:'10px'}},
+        h('span',{style:{fontSize:'12px',color:'#4f8ef7',fontWeight:'700',textTransform:'uppercase',letterSpacing:'1px'}},S.quizCert||S.activeSession?.cert),
+        h('span',{style:{fontSize:'12px',color:'#6b748a'}},(S.currentQ+1)+'/'+S.questions.length+(S.quizLoadingMore?' (loading more)':''))
+      ),
+      h('div',{style:{height:'4px',background:'#1e2535',borderRadius:'4px',overflow:'hidden',marginBottom:'24px'}},
+        h('div',{class:'progress-bar',style:{width:(S.currentQ/S.questions.length*100)+'%',transition:'width .4s'}})
+      ),
+      h('p',{style:{fontSize:'18px',fontWeight:'600',lineHeight:'1.5',marginBottom:'22px'}},cq.question),
+      h('div',{class:'flex-col gap-10'},
+        ...cq.options.map((opt,i)=>{
+          const letter=['A','B','C','D'][i];
+          let cls='opt-btn';
+          if (hasAnswered){
+            if (letter===cq.correctAnswer) cls+=' correct';
+            else if (letter===S.userAnswers[cq.id]) cls+=' wrong';
+            else cls+=' faded';
+          }
+          return h('button',{class:cls,disabled:hasAnswered,onClick:()=>handleAnswer(cq.id,letter)},
+            h('span',{class:'opt-letter'},letter),
+            h('span',{},opt.replace(/^[ABCD]\)\s*/,''))
+          );
+        })
+      ),
+      showFeedback&&h('div',{style:{background:'#080b12',border:'1px solid #1e2535',borderRadius:'10px',padding:'12px 16px',marginTop:'18px',fontSize:'13px',lineHeight:'1.6'}},
+        h('strong',{style:{color:isCorrect?'#3dd68c':'#f06a6a'}},isCorrect?'✓ Correct — ':'✗ Incorrect — '),
+        cq.explanation,
+        cq.sourceUrl&&h('div',{style:{marginTop:'6px'}},h('a',{href:cq.sourceUrl,target:'_blank',style:{color:'#4f8ef7',fontSize:'12px'}},'📎 '+(cq.sourceName||'Source')+' ↗'))
+      ),
+      h('div',{class:'flex',style:{justifyContent:'space-between',marginTop:'20px'}},
+        h('button',{class:'btn-secondary',disabled:S.currentQ===0,onClick:()=>setState({currentQ:S.currentQ-1})},'← Prev'),
+        h('button',{class:'btn-primary',disabled:S.currentQ>=S.questions.length-1,onClick:()=>setState({currentQ:S.currentQ+1})},'Next →')
+      )
+    ),
+    h('div',{style:{display:'flex',flexWrap:'wrap',gap:'4px',marginTop:'16px',justifyContent:'center'}},
+      ...S.questions.map((q,i)=>{
+        const ans=S.userAnswers[q.id];
+        const color=!ans?'#1e2535':ans===q.correctAnswer?'#3dd68c':'#f06a6a';
+        return h('div',{class:'nav-dot',style:{background:i===S.currentQ?'#4f8ef7':color},onClick:()=>setState({currentQ:i})});
+      })
+    )
+  );
+}
+
+function renderQuizResults(){
+  const score=calcScore();
+  const pct=Math.round((score/S.questions.length)*100);
+  const passed=pct>=70;
+  return h('div',{class:'page'},
+    h('button',{class:'btn-back',onClick:()=>setState({quizView:'setup'})},'← New Quiz'),
+    h('div',{class:'card',style:{textAlign:'center',padding:'36px',marginBottom:'20px'}},
+      h('div',{style:{fontSize:'48px',marginBottom:'12px'}},passed?'🎉':'📚'),
+      h('h2',{style:{fontSize:'26px',fontWeight:'700',marginBottom:'6px'}},passed?'Great job!':'Keep studying!'),
+      h('p',{style:{color:'#6b748a',marginBottom:'24px'}},S.quizCert||S.activeSession?.cert),
+      h('div',{style:{display:'inline-flex',flexDirection:'column',alignItems:'center',justifyContent:'center',width:'130px',height:'130px',borderRadius:'50%',border:`4px solid ${passed?'#3dd68c':'#f06a6a'}`,background:passed?'rgba(61,214,140,0.08)':'rgba(240,106,106,0.08)',margin:'0 auto 28px'}},
+        h('span',{style:{fontSize:'32px',fontWeight:'800'}},pct+'%'),
+        h('span',{style:{fontSize:'12px',color:'#6b748a'}},score+'/'+S.questions.length)
+      ),
+      h('div',{class:'flex gap-10',style:{justifyContent:'center',flexWrap:'wrap'}},
+        h('button',{class:'btn-primary',onClick:()=>setState({questions:[],userAnswers:{},currentQ:0,quizView:'setup'})},'New Quiz'),
+        h('button',{class:'btn-secondary',onClick:()=>setState({quizView:'review'})},'Review Answers'),
+        S.activeSession&&h('button',{class:'btn-secondary',onClick:()=>setState({view:'dashboard'})},'Back to Plan')
+      )
+    )
+  );
+}
+
+function renderQuizReview(){
+  return h('div',{class:'page'},
+    h('div',{class:'flex',style:{justifyContent:'space-between',marginBottom:'20px'}},
+      h('button',{class:'btn-back',style:{padding:'0'},onClick:()=>setState({quizView:'results'})},'← Back to Results'),
+      h('span',{style:{color:'#6b748a',fontSize:'13px'}},calcScore()+'/'+S.questions.length+' correct')
+    ),
+    ...S.questions.map((q,idx)=>{
+      const correct=S.userAnswers[q.id]===q.correctAnswer;
+      const wrong=S.userAnswers[q.id]&&!correct;
+      return h('div',{class:'card review-card',style:{borderColor:correct?'rgba(61,214,140,0.3)':wrong?'rgba(240,106,106,0.3)':'#1e2535'}},
+        h('div',{class:'flex',style:{justifyContent:'space-between',marginBottom:'10px'}},
+          h('span',{style:{color:'#4f8ef7',fontSize:'13px',fontWeight:'600'}},'Q'+(idx+1)),
+          h('span',{style:{fontSize:'12px',padding:'2px 10px',borderRadius:'20px',background:correct?'rgba(61,214,140,0.12)':wrong?'rgba(240,106,106,0.12)':'rgba(245,200,66,0.12)',color:correct?'#3dd68c':wrong?'#f06a6a':'#f5c842'}},correct?'✓ Correct':wrong?'✗ Wrong':'Skipped')
+        ),
+        h('p',{style:{fontWeight:'600',fontSize:'14px',marginBottom:'12px'}},q.question),
+        ...q.options.map((opt,i)=>{
+          const letter=['A','B','C','D'][i];
+          const isCor=letter===q.correctAnswer;
+          const isSel=S.userAnswers[q.id]===letter&&!isCor;
+          return h('div',{style:{padding:'8px 12px',borderRadius:'8px',marginBottom:'6px',background:isCor?'rgba(61,214,140,0.1)':isSel?'rgba(240,106,106,0.1)':'transparent',border:`1px solid ${isCor?'rgba(61,214,140,0.4)':isSel?'rgba(240,106,106,0.4)':'#1e2535'}`,fontSize:'13px',color:isCor?'#3dd68c':isSel?'#f06a6a':'#6b748a'}},opt,' ',isCor?'✓':isSel?'✗':'');
+        }),
+        h('div',{style:{background:'#080b12',borderRadius:'8px',padding:'10px 12px',marginTop:'8px',fontSize:'12px',color:'#6b748a',lineHeight:'1.6'}},
+          h('strong',{style:{color:'#dde3f0'}},'Explanation: '),q.explanation
+        ),
+        q.sourceUrl&&h('a',{href:q.sourceUrl,target:'_blank',style:{color:'#4f8ef7',fontSize:'12px',display:'inline-block',marginTop:'6px'}},'📎 '+(q.sourceName||'Source')+' ↗')
+      );
+    })
+  );
+}
+
+function renderBank(){
+  const totalQ=Object.values(S.questionBank).reduce((s,v)=>s+v.length,0);
+  const fileInput=h('input',{type:'file',accept:'.db',class:'hidden'});
+  fileInput.addEventListener('change',e=>{const f=e.target.files?.[0];if(f)importSQLite(f);});
+
+  return frag(
+    fileInput,
+    h('div',{class:'page'},
+      h('button',{class:'btn-back',onClick:()=>setState({view:'quiz'})},'← Back to Quiz'),
+      h('div',{class:'flex',style:{justifyContent:'space-between',alignItems:'flex-start',marginBottom:'24px',flexWrap:'wrap',gap:'12px'}},
+        h('div',{},
+          h('h1',{style:{fontSize:'24px',fontWeight:'700',marginBottom:'4px'}},'📦 Question Bank & Study Plans'),
+          h('p',{style:{color:'#6b748a',fontSize:'14px'}},totalQ+' questions across '+Object.keys(S.questionBank).length+' certification(s)')
+        ),
+        h('div',{class:'flex gap-10',style:{flexWrap:'wrap'}},
+          h('button',{class:'btn-secondary',onClick:()=>fileInput.click()},'⬆ Import Backup (.db)'),
+          h('button',{class:'btn-primary',style:{opacity:totalQ>0?'1':'0.4'},disabled:totalQ===0,onClick:exportSQLite},'⬇ Export Full Backup (.db)')
+        )
+      ),
+      S.bankImportStatus&&h('div',{class:'status-banner',style:{background:S.bankImportStatus.loading?'rgba(79,142,247,0.08)':S.bankImportStatus.success?'rgba(61,214,140,0.08)':'rgba(240,106,106,0.08)',border:`1px solid ${S.bankImportStatus.loading?'#4f8ef7':S.bankImportStatus.success?'#3dd68c':'#f06a6a'}`,color:S.bankImportStatus.loading?'#4f8ef7':S.bankImportStatus.success?'#3dd68c':'#f06a6a',marginBottom:'20px',display:'flex',justifyContent:'space-between',alignItems:'center'}},
+        h('span',{},S.bankImportStatus.message),
+        !S.bankImportStatus.loading&&h('button',{style:{background:'transparent',border:'none',color:'inherit',cursor:'pointer',fontSize:'16px'},onClick:()=>setState({bankImportStatus:null})},'✕')
+      ),
+      Object.keys(S.questionBank).length===0
+        ? h('div',{class:'card',style:{textAlign:'center',padding:'48px'}},h('div',{style:{fontSize:'40px',marginBottom:'12px'}},'📭'),h('p',{style:{color:'#6b748a'}},'No questions saved yet. Generate a quiz to start building your bank.'))
+        : h('div',{class:'flex-col gap-10'},
+            ...Object.entries(S.questionBank).map(([certKey,qs])=>h('div',{class:'card'},
+              h('div',{class:'flex',style:{justifyContent:'space-between',alignItems:'center',marginBottom:'12px'}},
+                h('div',{},
+                  h('div',{style:{fontWeight:'600',fontSize:'16px',textTransform:'capitalize'}},certKey),
+                  h('div',{style:{fontSize:'12px',color:'#6b748a',marginTop:'2px'}},qs.length+' questions saved')
+                ),
+                h('div',{class:'flex gap-8'},
+                  h('button',{class:'btn-secondary',style:{padding:'6px 14px',fontSize:'12px'},onClick:()=>setState({quizCert:certKey,quizSource:'saved',quizView:'setup',view:'quiz'})},'Use in Quiz'),
+                  h('button',{style:{background:'rgba(240,106,106,0.1)',border:'1px solid rgba(240,106,106,0.3)',color:'#f06a6a',borderRadius:'8px',padding:'6px 14px',fontSize:'12px',cursor:'pointer'},onClick:()=>{const u={...S.questionBank};delete u[certKey];saveBank(u);}},'Delete')
+                )
+              ),
+              h('div',{class:'flex-col gap-8'},
+                ...qs.slice(0,3).map((q,i)=>h('div',{style:{background:'#080b12',borderRadius:'8px',padding:'8px 12px',fontSize:'12px',color:'#6b748a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},h('span',{style:{color:'#4f8ef7',marginRight:'8px'}},'Q'+(i+1)),q.question)),
+                qs.length>3&&h('div',{style:{fontSize:'11px',color:'#6b748a',paddingLeft:'4px'}},`+${qs.length-3} more questions…`)
+              )
+            ))
+          ),
+      h('div',{style:{marginTop:'20px',padding:'16px 20px',background:'rgba(79,142,247,0.04)',border:'1px solid #1e2535',borderRadius:'12px',fontSize:'12px',color:'#6b748a',lineHeight:'1.7'}},
+        h('strong',{style:{color:'#dde3f0'}},'About the question bank'),h('br'),
+        'Questions are auto-saved as you generate quizzes. Export includes your question bank and all study plans as a single .db SQLite file. Import merges everything — duplicates and existing plans are skipped.'
+      )
+    )
+  );
+}
+
+/* ═══════════════════════════════════════════
+   MAIN RENDER
+═══════════════════════════════════════════ */
+function render(){
+  const app=document.getElementById('app');
+  app.innerHTML='';
+
+  if (S.view==='loading'){app.append(renderLoading());return;}
+  if (S.showApiModal){app.append(renderApiModal());return;}
+  if (S.view==='generating'){app.append(renderGenerating());return;}
+
+  if (S.view==='home'){app.append(renderHome());return;}
+  if (S.view==='dashboard'&&S.activeSession){app.append(renderDashboard());return;}
+  if (S.view==='topic'&&S.activeTopic){app.append(renderTopic());return;}
+  if (S.view==='bank'){app.append(renderBank());return;}
+  if (S.view==='quiz'){
+    if (S.quizView==='setup') app.append(renderQuizSetup());
+    else if (S.quizView==='active') app.append(renderQuizActive());
+    else if (S.quizView==='results') app.append(renderQuizResults());
+    else if (S.quizView==='review') app.append(renderQuizReview());
+    return;
+  }
+  // fallback
+  setState({view:'home'});
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+(async()=>{
+  const saved=await storageGet('cert-sessions-v2');
+  if (saved) S.sessions=saved;
+  const bank=await storageGet('cert-quiz-bank');
+  if (bank) S.questionBank=bank;
+  const key=await storageGet('cert-api-key');
+  if (key) S.apiKey=key;
+  setState({view:'home'});
+})();
+</script>
 </body>
 </html>
