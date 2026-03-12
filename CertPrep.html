@@ -453,7 +453,8 @@ function h(tag,attrs,...children){
     else if (k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(),v);
     else if (k==='html') el.innerHTML=v;
     else if (k==='style'&&typeof v==='object') Object.assign(el.style,v);
-    else el.setAttribute(k,v);
+    else if (k==='disabled'||k==='checked') { if(v) el[k]=true; }
+    else if (v!=null) el.setAttribute(k,v);
   }
   for (const c of children.flat(99)){
     if (c==null||c===false) continue;
@@ -578,7 +579,7 @@ function renderHome(){
   const certInp=h('input',{style:{flex:'1',background:'transparent',border:'none',color:'#dde3f0',fontSize:'15px',padding:'10px 12px',outline:'none'},
     placeholder:'e.g. SC-300, AWS Solutions Architect, CompTIA Security+…',
     value:S.certInput,
-    onInput:e=>setState({certInput:e.target.value},true),
+    onInput:e=>{S.certInput=e.target.value;const btn=e.target.nextElementSibling;if(btn)btn.disabled=!e.target.value.trim();},
     onKeydown:e=>{if(e.key==='Enter')handleStartPlan();}
   });
 
@@ -793,7 +794,7 @@ function renderQuizSetup(){
   const saved=getBankQuestions(S.quizCert||S.activeSession?.cert||'');
   const totalQ=Object.values(S.questionBank).reduce((s,v)=>s+v.length,0);
   const certInp=h('input',{class:'input',placeholder:'e.g. SC-300, AWS SAA, CompTIA Security+…',value:S.quizCert,
-    onInput:e=>setState({quizCert:e.target.value},true),onKeydown:e=>{if(e.key==='Enter')startQuiz();}});
+    onInput:e=>{S.quizCert=e.target.value;},onKeydown:e=>{if(e.key==='Enter')startQuiz();}});
   const countInp=h('input',{type:'range',min:'5',max:'50',value:S.quizCount,style:{width:'100%'},
     onInput:e=>setState({quizCount:parseInt(e.target.value)})});
 
