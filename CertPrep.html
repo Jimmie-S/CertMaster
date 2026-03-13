@@ -369,12 +369,21 @@ async function handleStartPlan() {
    QUIZ
 ═══════════════════════════════════════════ */
 async function generateQBatch(certName,count,startId,existing=[],recentOnly=false,signal=null) {
-  const avoid = existing.length ? `\nAvoid these topics: ${existing.map(q=>q.question.substring(0,40)).join('; ')}` : '';
+  const avoid = existing.length ? `\nAvoid repeating these questions: ${existing.map(q=>q.question.substring(0,60)).join(' | ')}` : '';
   const recent = recentOnly ? '\nFocus ONLY on features/updates from the last 12 months (2024-2025).' : '';
   const res = await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',signal,
     headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content:`Generate exactly ${count} multiple choice practice questions for the "${certName}" certification exam. Start numbering from ${startId}.\n\nReturn ONLY a valid JSON array, no markdown:\n[{"id":${startId},"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correctAnswer":"A","explanation":"...","sourceUrl":"https://...","sourceName":"..."}]\n\nMake questions realistic and exam-relevant. Vary difficulty.${recent}${avoid}`}]})
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content:`You are a certification exam question writer for the EXACT exam: "${certName}".
+
+CRITICAL: Generate questions ONLY for "${certName}". Do NOT generate questions for any other exam, even if the name looks similar (e.g. if asked for AZ-800, do NOT include AZ-801 content; if asked for SC-300, do NOT include SC-200 content). Every question must be specific to "${certName}" exam objectives only.
+
+Generate exactly ${count} multiple choice questions. Start numbering from ${startId}.
+
+Return ONLY a valid JSON array, no markdown:
+[{"id":${startId},"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correctAnswer":"A","explanation":"Why this answer is correct for ${certName}","sourceUrl":"https://...","sourceName":"..."}]
+
+Make questions realistic, varied in difficulty, and strictly scoped to ${certName} exam objectives.${recent}${avoid}`}]})
   });
   if (!res.ok) throw new Error(`API error ${res.status}`);
   const data=await res.json();
