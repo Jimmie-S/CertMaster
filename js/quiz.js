@@ -109,12 +109,14 @@ export async function startQuiz() {
 
     if (S.quizMode === 'exam') startExamTimer(S.examDuration);
 
-    const remaining = toGenerate - firstSize;
-    if (remaining > 0) {
+    if (allNew.length < toGenerate) {
       setState({ quizLoadingMore: true }, true);
-      let left = remaining;
-      while (left > 0 && !ctrl.signal.aborted) {
-        const batchSize = Math.min(5, left);
+      const maxAttempts = Math.ceil(toGenerate / 5) + 4;
+      let attempts = 0;
+      while (allNew.length < toGenerate && attempts < maxAttempts && !ctrl.signal.aborted) {
+        attempts++;
+        const need = toGenerate - allNew.length;
+        const batchSize = Math.min(5, need);
         try {
           const batch = await generateQBatch(cert, batchSize, allNew.length + 1, allNew, S.quizFocusRecent, ctrl.signal, S.quizTopics);
           if (Array.isArray(batch)) {
@@ -124,7 +126,6 @@ export async function startQuiz() {
             setState({ questions: [...fromSaved, ...allNew].map((q, i) => ({ ...q, id: i + 1 })) });
           }
         } catch (e) { if (e.name === 'AbortError') break; }
-        left -= batchSize;
       }
       setState({ quizLoadingMore: false });
     }
