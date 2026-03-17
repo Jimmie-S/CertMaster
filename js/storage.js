@@ -43,25 +43,31 @@ export async function exportSQLite() {
       const res = db.exec('SELECT id FROM certifications WHERE name=?', [certName]);
       const certId = res[0].values[0][0];
       for (const q of qs) {
+        const correctAnswer = q.correctAnswer ?? (q.correctAnswers ? q.correctAnswers.join(',') : '');
         db.run('INSERT INTO questions (certification_id,question,option_a,option_b,option_c,option_d,correct_answer,explanation,source_url,source_name) VALUES (?,?,?,?,?,?,?,?,?,?)',
-          [certId, q.question, q.options?.[0]||'', q.options?.[1]||'', q.options?.[2]||'', q.options?.[3]||'', q.correctAnswer, q.explanation, q.sourceUrl||'', q.sourceName||'']);
+          [certId, q.question||'', q.options?.[0]||'', q.options?.[1]||'', q.options?.[2]||'', q.options?.[3]||'', correctAnswer, q.explanation||'', q.sourceUrl||'', q.sourceName||'']);
       }
     }
     db.run('CREATE TABLE study_plans (id INTEGER PRIMARY KEY AUTOINCREMENT, cert TEXT NOT NULL, plan_json TEXT NOT NULL, progress_json TEXT NOT NULL, created_at TEXT)');
     for (const session of S.sessions) {
       db.run('INSERT INTO study_plans (cert,plan_json,progress_json,created_at) VALUES (?,?,?,?)',
-        [session.cert, JSON.stringify(session.plan), JSON.stringify(session.progress||{}), session.createdAt||'']);
+        [session.cert||'', JSON.stringify(session.plan||{}), JSON.stringify(session.progress||{}), session.createdAt||'']);
     }
     db.run('CREATE TABLE quiz_results (id INTEGER PRIMARY KEY, cert TEXT, score INTEGER, total INTEGER, pct INTEGER, mode TEXT, date TEXT)');
     for (const r of S.quizResults) {
       db.run('INSERT INTO quiz_results (id,cert,score,total,pct,mode,date) VALUES (?,?,?,?,?,?,?)',
-        [r.id, r.cert, r.score, r.total, r.pct, r.mode||'training', r.date||'']);
+        [r.id ?? Date.now(), r.cert||'', r.score ?? 0, r.total ?? 0, r.pct ?? 0, r.mode||'training', r.date||'']);
     }
     const data = db.export();
-    const blob = new Blob([data], { type: 'application/x-sqlite3' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `certprep-backup-${Date.now()}.db`; a.click();
-    URL.revokeObjectURL(url); db.close();
+    db.close();
+    // Use data URL instead of blob URL (works under strict CSP on Vercel)
+    let binary = '';
+    for (let i = 0; i < data.length; i++) binary += String.fromCharCode(data[i]);
+    const base64 = btoa(binary);
+    const a = document.createElement('a');
+    a.href = `data:application/x-sqlite3;base64,${base64}`;
+    a.download = `certprep-backup-${Date.now()}.db`;
+    a.click();
   } catch (e) {
     const msg = e instanceof Error ? e.message : (typeof e === 'string' ? e : 'WASM failed to load — check network/CORS');
     setState({ bankImportStatus: { loading: false, success: false, message: `Export failed: ${msg}` } });
