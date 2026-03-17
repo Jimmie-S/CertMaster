@@ -342,28 +342,31 @@ export function renderQuizActive() {
       h('div', { class: 'flex', style: { justifyContent: 'space-between', marginTop: '20px' } },
         h('button', { class: 'btn-secondary', disabled: S.currentQ === 0, onClick: () => setState({ currentQ: S.currentQ - 1 }) }, '← Prev'),
         h('button', { class: 'btn-primary', onClick: () => {
+          const isLast = S.currentQ >= S.questions.length - 1;
           if (!hasAnswered) {
             if (cq.type === 'multi') {
               const sel = (S.userAnswers[cq.id]?.selected) || [];
               if (sel.length > 0) submitMulti(cq.id);
-              else setState({ currentQ: Math.min(S.currentQ + 1, S.questions.length - 1) });
+              else if (!isLast) setState({ currentQ: S.currentQ + 1 });
               return;
             } else if (cq.type === 'order') {
               const placed = S['_placed_' + cq.id];
               if (placed && placed.every(x => x !== null)) submitOrder(cq.id, [...placed]);
-              else setState({ currentQ: Math.min(S.currentQ + 1, S.questions.length - 1) });
+              else if (!isLast) setState({ currentQ: S.currentQ + 1 });
               return;
             } else if (cq.type === 'casestudy') {
               const a = S.userAnswers[cq.id] || { sub: {} };
               setState({ userAnswers: { ...S.userAnswers, [cq.id]: { ...a, submitted: true } } });
               return;
             }
-            setState({ currentQ: Math.min(S.currentQ + 1, S.questions.length - 1) });
+            if (!isLast) setState({ currentQ: S.currentQ + 1 });
             return;
           }
-          setState({ currentQ: Math.min(S.currentQ + 1, S.questions.length - 1) });
-        } }, hasAnswered ? (S.currentQ >= S.questions.length - 1 ? 'Done ✓' : 'Next →') : 'Submit & Next →')
-      )
+          if (isLast && allAnswered) { finishQuiz(); return; }
+          if (!isLast) setState({ currentQ: S.currentQ + 1 });
+        } }, hasAnswered ? (S.currentQ >= S.questions.length - 1 ? (allAnswered ? 'See Results →' : 'Done ✓') : 'Next →') : 'Submit & Next →')
+      ),
+      allAnswered && h('button', { class: 'btn-primary', style: { marginTop: '12px', width: '100%', padding: '14px', fontSize: '15px', fontWeight: '700' }, onClick: finishQuiz }, '🏁 Finish Quiz & See Results →')
     ),
     // Question dot navigation
     h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '16px', justifyContent: 'center' } },
