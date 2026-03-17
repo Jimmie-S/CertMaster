@@ -63,7 +63,8 @@ export async function exportSQLite() {
     const a = document.createElement('a'); a.href = url; a.download = `certprep-backup-${Date.now()}.db`; a.click();
     URL.revokeObjectURL(url); db.close();
   } catch (e) {
-    setState({ bankImportStatus: { loading: false, success: false, message: `Export failed: ${e.message}` } });
+    const msg = e instanceof Error ? e.message : (typeof e === 'string' ? e : 'WASM failed to load — check network/CORS');
+    setState({ bankImportStatus: { loading: false, success: false, message: `Export failed: ${msg}` } });
   }
 }
 
@@ -142,6 +143,7 @@ export async function importSQLite(file) {
     if (!parts.length) parts.push('Nothing new to import (all already present)');
     setState({ bankImportStatus: { loading: false, success: true, message: `Imported: ${parts.join(' · ')}` } });
   } catch (e) {
-    setState({ bankImportStatus: { loading: false, success: false, message: `Import failed: ${e.message}` } });
+    const msg = e instanceof Error ? e.message : (typeof e === 'string' ? e : 'WASM failed to load — check network/CORS');
+    setState({ bankImportStatus: { loading: false, success: false, message: `Import failed: ${msg}` } });
   }
 }

@@ -62,6 +62,7 @@ TYPE 1 - "mcq" (single best answer scenario, ~40% of questions):
 
 TYPE 2 - "multi" (select ALL that apply, 2-3 correct, ~25% of questions):
 {"id":${startId},"type":"multi","domain":"Conditional Access","question":"Which THREE actions should you perform?","options":["A) ...","B) ...","C) ...","D) ...","E) ..."],"correctAnswers":["A","C","E"],"explanation":"...","sourceUrl":"https://...","sourceName":"..."}
+CRITICAL for "multi": The number word in the question text (TWO/THREE/FOUR) MUST exactly match the length of "correctAnswers". If correctAnswers has 3 items, the question must say THREE. Never mismatch these.
 
 TYPE 3 - "order" (correct sequence of steps, ~15% of questions):
 {"id":${startId},"type":"order","domain":"Privileged Identity","question":"In which order should you perform these steps?","steps":["Step B","Step A","Step D","Step C"],"correctOrder":[1,0,3,2],"explanation":"...","sourceUrl":"https://...","sourceName":"..."}

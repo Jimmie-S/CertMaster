@@ -89,7 +89,7 @@ export async function startQuiz() {
   try {
     if (S.quizSource === 'saved') {
       const shuffled = getWeightedQuestions(cert, S.quizCount);
-      setState({ questions: shuffled.map((q, i) => ({ ...q, id: i + 1 })), quizLoading: false });
+      setState({ questions: shuffled.map((q, i) => ({ ...sanitizeQuestion(q), id: i + 1 })), quizLoading: false });
       if (S.quizMode === 'exam') startExamTimer(S.examDuration);
       return;
     }
@@ -97,13 +97,13 @@ export async function startQuiz() {
     let fromSaved = [], toGenerate = S.quizCount;
     if (S.quizSource === 'mixed' && saved.length > 0) {
       const max = Math.min(Math.floor(S.quizCount * 0.5), saved.length);
-      fromSaved = getWeightedQuestions(cert, max);
+      fromSaved = getWeightedQuestions(cert, max).map(sanitizeQuestion);
       toGenerate = S.quizCount - fromSaved.length;
     }
 
     const firstSize = Math.min(5, toGenerate);
     const firstBatch = await generateQBatch(cert, firstSize, 1, [], S.quizFocusRecent, ctrl.signal, S.quizTopics);
-    let allNew = deduplicateBatch(firstBatch, []);
+    let allNew = deduplicateBatch(firstBatch, []).map(sanitizeQuestion);
     addToBank(cert, allNew);
     setState({ questions: [...fromSaved, ...allNew].map((q, i) => ({ ...q, id: i + 1 })), quizLoading: false });
 
@@ -118,7 +118,7 @@ export async function startQuiz() {
         try {
           const batch = await generateQBatch(cert, batchSize, allNew.length + 1, allNew, S.quizFocusRecent, ctrl.signal, S.quizTopics);
           if (Array.isArray(batch)) {
-            const deduped = deduplicateBatch(batch, allNew);
+            const deduped = deduplicateBatch(batch, allNew).map(sanitizeQuestion);
             allNew = [...allNew, ...deduped];
             addToBank(cert, deduped);
             setState({ questions: [...fromSaved, ...allNew].map((q, i) => ({ ...q, id: i + 1 })) });
@@ -133,6 +133,17 @@ export async function startQuiz() {
     clearExamTimer();
     setState({ quizError: `Failed: ${err.message}`, quizLoading: false, quizLoadingMore: false, quizView: 'setup' });
   }
+}
+
+/* ── Sanitize multi-select question text to match actual correctAnswers count ── */
+const NUM_WORDS = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX'];
+function sanitizeQuestion(q) {
+  if (q.type !== 'multi' || !q.correctAnswers?.length) return q;
+  const actual = q.correctAnswers.length;
+  const word = NUM_WORDS[actual];
+  if (!word) return q;
+  const fixed = q.question.replace(/\b(ONE|TWO|THREE|FOUR|FIVE|SIX)\b/g, word);
+  return fixed === q.question ? q : { ...q, question: fixed };
 }
 
 /* ── Answer handling ── */
