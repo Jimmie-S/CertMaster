@@ -19,7 +19,20 @@ GET  /api/questions?cert=AZ-900 → one cert's questions
 GET  /api/certs              → [{cert, n}] counts
 POST /api/claude             → capped proxy for study-plan generation + dashboard chat
 GET  /api/health             → {ok, model, hasKey}
+
+# Admin curation UI (gated by ADMIN_PASSWORD; disabled if unset)
+GET    /admin                      → password-protected browser: page through stored questions,
+                                      see each one's LLM-judge verdict + reason, delete bad ones
+GET    /api/admin/questions?cert=  → id + data + quality + created_at  (header: x-admin-key)
+DELETE /api/admin/questions/:id    → remove one question                (header: x-admin-key)
 ```
+
+## Browsing / curating the bank
+
+Set `ADMIN_PASSWORD` (env var) and open **`https://your-domain/admin`**. Enter the password to
+page through every stored question per cert — correct answer highlighted, explanation, source, and
+the quality-check verdict (`pass`/`fail`/`unjudged`) with the judge's reason — and delete any you
+don't want. Leaving `ADMIN_PASSWORD` unset disables the admin endpoints entirely (they return 503).
 
 The shared bank is keyed by `cert.toLowerCase().trim()` to match the frontend.
 

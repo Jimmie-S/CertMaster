@@ -68,3 +68,17 @@ export async function listCerts() {
   );
   return rows;
 }
+
+/* ── Admin: includes db id + stored judge verdict, for the curation UI ── */
+export async function getQuestionsAdmin(cert, limit = 2000) {
+  const { rows } = await pool.query(
+    'SELECT id, type, data, quality, created_at FROM questions WHERE cert = $1 ORDER BY created_at DESC LIMIT $2',
+    [cert, limit]
+  );
+  return rows;
+}
+
+export async function deleteQuestion(id) {
+  const r = await pool.query('DELETE FROM questions WHERE id = $1', [id]);
+  return r.rowCount;
+}

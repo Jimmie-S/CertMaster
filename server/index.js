@@ -4,7 +4,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
-import { initDb, existingKeyTexts, insertQuestions, getQuestions, getAllBanks, listCerts } from './db.js';
+import { initDb, existingKeyTexts, insertQuestions, getQuestions, getAllBanks, listCerts, getQuestionsAdmin, deleteQuestion } from './db.js';
 import { certKey, validateStructure, dedupe, hashQuestion } from './quality.js';
 import { generateQuestions, judgeQuestions, callClaude } from './anthropic.js';
 
@@ -92,6 +92,30 @@ app.post('/api/generate', genLimit, async (req, res, next) => {
       questions: kept.map(({ _quality, ...c }) => c),
       stats: { generated: raw.length, validStructure: valid.length, unique: unique.length, accepted: kept.length, stored },
     });
+  } catch (e) { next(e); }
+});
+
+// ── Admin (curation) — gated by ADMIN_PASSWORD; disabled if the env var is unset ──
+function admin(req, res, next) {
+  const pw = process.env.ADMIN_PASSWORD;
+  if (!pw) return res.status(503).json({ error: 'Admin is disabled — set ADMIN_PASSWORD on the server to enable it.' });
+  if ((req.get('x-admin-key') || '') !== pw) return res.status(401).json({ error: 'Wrong admin password.' });
+  next();
+}
+
+app.get('/api/admin/questions', admin, async (req, res, next) => {
+  try {
+    const cert = certKey(req.query.cert);
+    if (!cert) return res.status(400).json({ error: 'cert required' });
+    res.json({ cert, questions: await getQuestionsAdmin(cert) });
+  } catch (e) { next(e); }
+});
+
+app.delete('/api/admin/questions/:id', admin, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'bad id' });
+    res.json({ deleted: await deleteQuestion(id) });
   } catch (e) { next(e); }
 });
 

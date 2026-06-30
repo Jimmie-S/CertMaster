@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CertPrep — Question Bank Admin</title>
+<style>
+  :root{--bg:#080b12;--card:#121722;--line:#1e2535;--fg:#e7ecf3;--muted:#6b748a;
+        --blue:#4f8ef7;--green:#3dd68c;--red:#f06a6a;--yellow:#f5c842;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:'IBM Plex Sans',system-ui,sans-serif;line-height:1.5}
+  a{color:var(--blue)}
+  .wrap{max-width:900px;margin:0 auto;padding:24px 16px 80px}
+  header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:20px}
+  h1{font-size:20px;font-weight:700;margin:0}
+  select,input,button{font:inherit;border-radius:8px;border:1px solid var(--line);background:#0e131d;color:var(--fg);padding:8px 12px}
+  button{cursor:pointer;background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+  button.ghost{background:transparent;color:var(--muted);border-color:var(--line)}
+  button.danger{background:transparent;border-color:rgba(240,106,106,.4);color:var(--red);padding:4px 10px;font-size:12px}
+  button.danger:hover{background:rgba(240,106,106,.12)}
+  .muted{color:var(--muted);font-size:13px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .badges{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .badge{font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px;background:#0e131d;border:1px solid var(--line);color:var(--muted)}
+  .badge.type{color:var(--blue);border-color:rgba(79,142,247,.4)}
+  .badge.pass{color:var(--green);border-color:rgba(61,214,140,.4);background:rgba(61,214,140,.08)}
+  .badge.fail{color:var(--red);border-color:rgba(240,106,106,.4);background:rgba(240,106,106,.08)}
+  .q{font-weight:600;margin:6px 0 10px}
+  ul.opts{list-style:none;padding:0;margin:0 0 10px}
+  ul.opts li{padding:6px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;font-size:14px}
+  ul.opts li.correct{border-color:rgba(61,214,140,.5);background:rgba(61,214,140,.08)}
+  .exp{font-size:13px;color:#b9c2d0;border-left:2px solid var(--line);padding-left:10px;margin:8px 0}
+  .reason{font-size:13px;color:var(--yellow);margin-top:6px}
+  .scenario{white-space:pre-wrap;font-size:13px;color:#b9c2d0;background:#0e131d;border:1px solid var(--line);border-radius:8px;padding:10px;margin:8px 0;max-height:240px;overflow:auto}
+  .sub{border-top:1px dashed var(--line);padding-top:10px;margin-top:10px}
+  .login{max-width:360px;margin:18vh auto 0;text-align:center}
+  .login input{width:100%;margin:12px 0;text-align:center}
+  .err{color:var(--red);font-size:13px;min-height:18px}
+</style>
+</head>
+<body>
+<div id="app" class="wrap"></div>
+<script>
+const $ = (t, a={}, ...kids) => { const e=document.createElement(t);
+  for(const[k,v]of Object.entries(a)){ if(k==='class')e.className=v; else if(k==='html')e.innerHTML=v; else if(k.startsWith('on'))e.addEventListener(k.slice(2).toLowerCase(),v); else if(v!=null)e.setAttribute(k,v);}
+  for(const c of kids.flat()){ if(c==null||c===false)continue; e.append(c.nodeType?c:document.createTextNode(c)); } return e; };
+const app = document.getElementById('app');
+const esc = s => String(s==null?'':s).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const KEY = () => sessionStorage.getItem('cm-admin-key') || '';
+const letters = 'ABCDEFGH';
+
+async function api(path, opts={}) {
+  const res = await fetch(path, { ...opts, headers: { ...(opts.headers||{}), 'x-admin-key': KEY() } });
+  if (res.status === 401) { sessionStorage.removeItem('cm-admin-key'); showLogin('Wrong password.'); throw new Error('unauth'); }
+  let data = {}; try { data = await res.json(); } catch {}
+  if (!res.ok || data.error) throw new Error(data.error || ('Error ' + res.status));
+  return data;
+}
+
+function showLogin(errMsg='') {
+  app.innerHTML='';
+  const input = $('input',{type:'password',placeholder:'Admin password',autofocus:'true',
+    onKeydown:e=>{ if(e.key==='Enter') go(); }});
+  const err = $('div',{class:'err'}, errMsg);
+  function go(){ const v=input.value.trim(); if(!v)return; sessionStorage.setItem('cm-admin-key',v); load(); }
+  app.append($('div',{class:'login'},
+    $('h1',{},'🔒 Question Bank Admin'),
+    input, err,
+    $('button',{onClick:go,style:'width:100%'},'Unlock')
+  ));
+  setTimeout(()=>input.focus(),50);
+}
+
+async function load() {
+  app.innerHTML='';
+  let certs;
+  try { certs = (await api('/api/certs')).certs || []; }
+  catch(e){ if(e.message==='unauth')return; app.append($('div',{class:'err'}, e.message.includes('disabled')?'Admin disabled — set ADMIN_PASSWORD on the server.':e.message)); return; }
+
+  const sel = $('select',{onChange:()=>loadCert(sel.value)});
+  if(!certs.length) sel.append($('option',{value:''},'— no questions stored yet —'));
+  for(const c of certs) sel.append($('option',{value:c.cert}, `${c.cert.toUpperCase()} (${c.n})`));
+
+  const count = $('span',{class:'muted'});
+  app.append(
+    $('header',{},
+      $('h1',{},'Question Bank'),
+      $('div',{class:'badges'}, sel, count,
+        $('button',{class:'ghost',onClick:()=>loadCert(sel.value)},'↻ Reload'),
+        $('button',{class:'ghost',onClick:()=>{sessionStorage.removeItem('cm-admin-key');showLogin();}},'Lock'))
+    ),
+    $('a',{href:'/',class:'muted'},'← back to app')
+  );
+  const list = $('div',{id:'list',style:'margin-top:16px'});
+  app.append(list);
+  window._setCount = n => count.textContent = n!=null ? `${n} question${n===1?'':'s'}` : '';
+  if(certs.length) loadCert(certs[0].cert);
+}
+
+async function loadCert(cert) {
+  if(!cert) return;
+  const list = document.getElementById('list');
+  list.innerHTML=''; window._setCount(); list.append($('div',{class:'muted'},'Loading…'));
+  let rows;
+  try { rows = (await api('/api/admin/questions?cert='+encodeURIComponent(cert))).questions || []; }
+  catch(e){ if(e.message==='unauth')return; list.innerHTML=''; list.append($('div',{class:'err'},e.message)); return; }
+  list.innerHTML=''; window._setCount(rows.length);
+  if(!rows.length){ list.append($('div',{class:'muted'},'No questions for this cert.')); return; }
+  for(const r of rows) list.append(card(r));
+}
+
+function verdictBadge(q){
+  if(!q || q.judged===false) return $('span',{class:'badge'},'unjudged');
+  if(q.verdict==='fail') return $('span',{class:'badge fail'},'✗ judge: fail');
+  return $('span',{class:'badge pass'},'✓ judge: pass');
+}
+
+function optList(options, correctLetters){
+  const ul = $('ul',{class:'opts'});
+  (options||[]).forEach((o,i)=>{
+    const isC = correctLetters.includes(letters[i]);
+    ul.append($('li',{class:isC?'correct':''}, (isC?'✓ ':'')+o));
+  });
+  return ul;
+}
+
+function body(d){
+  const type = d.type || 'mcq';
+  const frag = document.createDocumentFragment();
+  if(type==='casestudy'){
+    frag.append($('div',{class:'q'}, d.title || 'Case study'));
+    frag.append($('div',{class:'scenario'}, d.scenario || ''));
+    (d.questions||[]).forEach(sq=>{
+      const w=$('div',{class:'sub'});
+      w.append($('div',{class:'q'}, `(${sq.subId||''}) ${sq.question||''}`));
+      w.append(optList(sq.options, [String(sq.correctAnswer||'').toUpperCase()]));
+      if(sq.explanation) w.append($('div',{class:'exp'}, sq.explanation));
+      frag.append(w);
+    });
+    return frag;
+  }
+  frag.append($('div',{class:'q'}, d.question || ''));
+  if(type==='order'){
+    const order=Array.isArray(d.correctOrder)?d.correctOrder:[];
+    const ul=$('ul',{class:'opts'});
+    order.forEach((idx,i)=> ul.append($('li',{class:'correct'}, `${i+1}. ${(d.steps||[])[idx]||''}`)));
+    frag.append($('div',{class:'muted'},'Correct order:'), ul);
+  } else if(type==='multi'){
+    frag.append(optList(d.options, (d.correctAnswers||[]).map(x=>String(x).toUpperCase())));
+  } else {
+    frag.append(optList(d.options, [String(d.correctAnswer||'').toUpperCase()]));
+  }
+  if(d.explanation) frag.append($('div',{class:'exp'}, d.explanation));
+  return frag;
+}
+
+function card(r){
+  const d = r.data || {};
+  const c = $('div',{class:'card'});
+  const created = (r.created_at||'').slice(0,10);
+  c.append($('div',{class:'row'},
+    $('div',{class:'badges'},
+      $('span',{class:'badge type'}, d.type || 'mcq'),
+      d.domain ? $('span',{class:'badge'}, d.domain) : null,
+      verdictBadge(r.quality),
+      created ? $('span',{class:'muted'}, created) : null),
+    $('button',{class:'danger',onClick:()=>del(r.id,c)},'Delete')
+  ));
+  c.append(body(d));
+  if(d.sourceUrl) c.append($('div',{class:'muted',style:'margin-top:6px'}, 'Source: ',
+    $('a',{href:d.sourceUrl,target:'_blank',rel:'noopener'}, d.sourceName || d.sourceUrl)));
+  if(r.quality && r.quality.reason) c.append($('div',{class:'reason'}, '⚖ judge: '+r.quality.reason));
+  return c;
+}
+
+async function del(id, el){
+  if(!confirm('Delete this question permanently?')) return;
+  try {
+    await api('/api/admin/questions/'+id, { method:'DELETE' });
+    el.remove();
+    const n=document.querySelectorAll('#list .card').length; window._setCount(n);
+  } catch(e){ if(e.message!=='unauth') alert('Delete failed: '+e.message); }
+}
+
+KEY() ? load() : showLogin();
+</script>
+</body>
+</html>
