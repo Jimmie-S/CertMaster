@@ -1,0 +1,29 @@
+# Local development: `ANTHROPIC_API_KEY=sk-ant-... docker compose up --build`
+# Then open http://localhost:3000
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: certprep
+      POSTGRES_PASSWORD: certprep
+      POSTGRES_DB: certprep
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U certprep"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgres://certprep:certprep@db:5432/certprep
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      MODEL: claude-sonnet-4-6
+    ports: ["3000:3000"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
