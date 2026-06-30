@@ -13,7 +13,7 @@ export async function askClaude(messages, system = '', apiKey = null) {
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true',
     },
-    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 4000, system, messages }),
+    body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 4000, system, messages }),
   });
   if (!res.ok) throw new Error(`API error ${res.status}`);
   const data = await res.json();
@@ -45,7 +45,7 @@ export async function generateQBatch(certName, count, startId, existing = [], re
       'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 6000,
       messages: [{
         role: 'user',

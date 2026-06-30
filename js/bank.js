@@ -1,83 +1,114 @@
 /* ═══════════════════════════════════════════
-   API — Anthropic Claude calls
+   BANK — question bank + spaced repetition
 ═══════════════════════════════════════════ */
-import { S } from './state.js';
+import { S, setState } from './state.js';
+import { saveBank, storageSet } from './storage.js';
 
-export async function askClaude(messages, system = '', apiKey = null) {
-  if (!apiKey) throw new Error('NO_API_KEY');
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 4000, system, messages }),
-  });
-  if (!res.ok) throw new Error(`API error ${res.status}`);
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
-  return data.content?.[0]?.text || '';
+/* ── Similarity helpers for deduplication ── */
+const STOP_WORDS = new Set(['what','which','should','would','your','that','this','when','where','have','with','from','need','will','must','does','into','about','their','they','using','after','before','order','following','company','contoso','fabrikam','woodgrove','tailwind','traders','wants','plans']);
+
+function questionKeywords(text) {
+  return new Set((text || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3 && !STOP_WORDS.has(w)));
 }
 
-export async function askClaudeJSON(messages, system = '', apiKey = null) {
-  const text = await askClaude(messages, system, apiKey);
-  const clean = text.replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '').trim();
-  return JSON.parse(clean);
+function isTooSimilar(a, b, threshold = 0.55) {
+  const ka = questionKeywords(a), kb = questionKeywords(b);
+  if (!ka.size || !kb.size) return false;
+  let overlap = 0;
+  for (const w of ka) if (kb.has(w)) overlap++;
+  return (overlap / Math.min(ka.size, kb.size)) >= threshold;
 }
 
-export async function generateQBatch(certName, count, startId, existing = [], recentOnly = false, signal = null, topicFilter = []) {
-  const avoid = existing.length
-    ? `\nIMPORTANT - Do NOT generate questions on these already-covered topics (even phrased differently):\n${existing.map((q, i) => `${i + 1}. ${(q.question || '').substring(0, 120)}`).join('\n')}`
-    : '';
-  const recent = recentOnly ? '\nFocus ONLY on features/updates from the last 12 months (2024-2025).' : '';
-  const topicScope = topicFilter.length
-    ? `\nFocus ONLY on these specific topics: ${topicFilter.join(', ')}. Do not generate questions outside these topics.`
-    : '';
+export function deduplicateBatch(batch, existing) {
+  const result = [];
+  const pool = [...existing];
+  for (const q of batch) {
+    const qText = q.question || '';
+    const isDup = pool.some(e => {
+      if ((e.question || '').toLowerCase() === qText.toLowerCase()) return true;
+      return isTooSimilar(qText, e.question);
+    });
+    if (!isDup) { result.push(q); pool.push(q); }
+  }
+  return result;
+}
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST', signal,
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': S.apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 6000,
-      messages: [{
-        role: 'user',
-        content: `You are a certification exam question writer for the EXACT exam: "${certName}".
-
-CRITICAL: Generate questions ONLY for "${certName}". Do NOT include content from similar exams.
-
-Generate exactly ${count} questions starting at id ${startId}. Mix these FOUR types:
-
-Each question MUST include a "domain" field — a short exam section name (e.g. "Identity Management", "Network Security") matching the real exam objectives for "${certName}". Use 3-6 distinct domain names across the question set.
-
-TYPE 1 - "mcq" (single best answer scenario, ~40% of questions):
-{"id":${startId},"type":"mcq","domain":"Identity Management","question":"Contoso Ltd has 500 users and needs to... What should you do?","options":["A) ...","B) ...","C) ...","D) ..."],"correctAnswer":"A","explanation":"...","sourceUrl":"https://...","sourceName":"..."}
-
-TYPE 2 - "multi" (select ALL that apply, 2-3 correct, ~25% of questions):
-{"id":${startId},"type":"multi","domain":"Conditional Access","question":"Which THREE actions should you perform?","options":["A) ...","B) ...","C) ...","D) ...","E) ..."],"correctAnswers":["A","C","E"],"explanation":"...","sourceUrl":"https://...","sourceName":"..."}
-CRITICAL for "multi": The number word in the question text (TWO/THREE/FOUR) MUST exactly match the length of "correctAnswers". If correctAnswers has 3 items, the question must say THREE. Never mismatch these.
-
-TYPE 3 - "order" (correct sequence of steps, ~15% of questions):
-{"id":${startId},"type":"order","domain":"Privileged Identity","question":"In which order should you perform these steps?","steps":["Step B","Step A","Step D","Step C"],"correctOrder":[1,0,3,2],"explanation":"...","sourceUrl":"https://...","sourceName":"..."}
-(correctOrder = indices of steps[] arranged in the correct sequence)
-
-TYPE 4 - "casestudy" (shared scenario + 2-3 sub-questions, ~20% of questions — counts as multiple question ids):
-{"id":${startId},"type":"casestudy","domain":"Identity Governance","title":"Case Study: Contoso Identity Rollout","scenario":"## Background\nContoso Ltd is a financial services company with 3,000 employees across 5 countries...\n\n## Current Environment\n- Active Directory on-premises with 3 domains\n- Microsoft 365 E3 licenses\n...\n\n## Requirements\n- Users must MFA from untrusted locations\n- HR data must be access-reviewed quarterly\n...\n\n## Technical Constraints\n- No budget for new licenses\n- Must complete within 60 days","questions":[{"subId":"a","question":"You need to implement the MFA requirement. What should you configure?","options":["A) ...","B) ...","C) ...","D) ..."],"correctAnswer":"B","explanation":"..."},{"subId":"b","question":"Which tool meets the access review requirement?","options":["A) ...","B) ...","C) ...","D) ..."],"correctAnswer":"A","explanation":"..."}],"sourceUrl":"https://...","sourceName":"..."}
-
-Return ONLY a valid JSON array, no markdown. For casestudy, each item counts as one entry in the array (the sub-questions are inside it). Use realistic enterprise scenarios with company names. Vary difficulty.${topicScope}${recent}${avoid}`,
-      }],
-    }),
+export function addToBank(certName, newQs) {
+  const key = certName.toLowerCase().trim();
+  const existing = S.questionBank[key] || [];
+  const unique = newQs.filter(nq => {
+    const nqText = (nq.question || '').toLowerCase();
+    return !existing.some(eq => {
+      if ((eq.question || '').toLowerCase() === nqText) return true;
+      return isTooSimilar(nq.question, eq.question);
+    });
   });
-  if (!res.ok) throw new Error(`API error ${res.status}`);
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
-  const text = data.content[0].text;
-  return JSON.parse(text.replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '').trim());
+  if (!unique.length) return 0;
+  const updated = { ...S.questionBank, [key]: [...existing, ...unique] };
+  saveBank(updated);
+  setState({ saveNote: `+${unique.length} saved to question bank (${updated[key].length} total)` }, true);
+  setTimeout(() => setState({ saveNote: '' }), 2500);
+  return unique.length;
+}
+
+export function getBankQuestions(certName) {
+  return S.questionBank[certName.toLowerCase().trim()] || [];
+}
+
+/* ── Spaced repetition ── */
+
+// Inline correctness check to avoid circular dep with quiz.js
+function _isCorrect(q, ans) {
+  if (!ans) return false;
+  if (q.type === 'multi') {
+    if (!ans.submitted) return false;
+    return [...(ans.selected || [])].sort().join(',') === [...(q.correctAnswers || [])].sort().join(',');
+  }
+  if (q.type === 'order') {
+    return ans.submitted && JSON.stringify(ans.orderedSteps) === JSON.stringify(q.correctOrder);
+  }
+  if (q.type === 'casestudy') {
+    return ans.submitted && (q.questions || []).every(sq => ans.sub && ans.sub[sq.subId] === sq.correctAnswer);
+  }
+  return ans === q.correctAnswer;
+}
+
+export function updateQuestionStats(certName, questions, userAnswers) {
+  const key = certName.toLowerCase().trim();
+  const stats = { ...S.questionStats };
+  if (!stats[key]) stats[key] = {};
+  for (const q of questions) {
+    const k = (q.question || '').slice(0, 100);
+    const curr = stats[key][k] || { correct: 0, wrong: 0 };
+    if (_isCorrect(q, userAnswers[q.id])) stats[key][k] = { ...curr, correct: curr.correct + 1 };
+    else stats[key][k] = { ...curr, wrong: curr.wrong + 1 };
+  }
+  setState({ questionStats: stats }, true);
+  storageSet('cert-question-stats', stats);
+}
+
+// Weighted random sample — questions answered wrong more often get higher priority
+export function getWeightedQuestions(certName, count) {
+  const key = certName.toLowerCase().trim();
+  const questions = [...(S.questionBank[key] || [])];
+  if (questions.length <= count) return questions.sort(() => Math.random() - 0.5);
+
+  const stats = S.questionStats[key] || {};
+  const weighted = questions.map(q => {
+    const k = (q.question || '').slice(0, 100);
+    const st = stats[k] || { correct: 0, wrong: 0 };
+    return { q, weight: 1 + st.wrong }; // unseen = weight 1, each wrong +1
+  });
+
+  const selected = [];
+  const pool = [...weighted];
+  for (let i = 0; i < count && pool.length > 0; i++) {
+    const total = pool.reduce((s, w) => s + w.weight, 0);
+    let rand = Math.random() * total;
+    let idx = 0;
+    for (; idx < pool.length - 1; idx++) { rand -= pool[idx].weight; if (rand <= 0) break; }
+    selected.push(pool[idx].q);
+    pool.splice(idx, 1);
+  }
+  return selected;
 }
